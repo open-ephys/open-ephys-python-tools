@@ -1,0 +1,14 @@
+*.pyc
+*.so
+*.pyd
+*~
+.#*
+*.lprof
+*.swp
+*.swo
+.DS_Store
+__pycache__
+
+.spyproject
+
+open_ephys/analysis/tests
