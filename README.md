@@ -47,9 +47,9 @@ directory = '/path/to/data/2020-11-10_09-28-30' # for example
 session = Session(directory)
 ```
 
-If the directory contains one more Record Nodes (GUI version 0.5+), the `session` object will contain a list of data for each Record Node, accessible via `session.recordnodes[N]`, where `N = 0, 1, 2,`, etc.  
+If the directory contains data from one more Record Nodes (GUI version 0.5+), the `session` object will contain a list of RecordNodes, accessible via `session.recordnodes[N]`, where `N = 0, 1, 2,`, etc.  
 
-If your directory just contains data, data can be accessed via `session.recordings`. The format of the recordings will be detected automatically as either 
+If your directory just contains data (any GUI version), individual recordings can be accessed via `session.recordings`. The format of the recordings will be detected automatically as either 
 [Binary](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
 [Open Ephys](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
 [NWB 1.0](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html), or 
@@ -65,7 +65,7 @@ More details about `continuous`, `spikes`, and `events` objects can be found in 
 
 ### control
 
-First, launch an instance of Open Ephys, and make sure a [Network Events](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Network-Events.html) module is in the signal chain.
+First, launch an instance of Open Ephys, and make sure a [Network Events](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Network-Events.html) plugin is in the signal chain.
 
 Then, from your Python process:
 
@@ -78,20 +78,6 @@ url = '10.128.50.10' # IP address of the computer running Open Ephys
 controller = NetworkControl(url)
 
 controller.start # start acquisition
-
-controller.wait(5) # wait for 5 seconds
-
-controller.start_recording # start recording
-
-controller.wait(3) # wait for 3 seconds
-
-controller.send_ttl(channel = 5, state = 1) # send an "ON" event on channel 5
-
-controller.wait(2) # wait for 2 seconds
-
-controller.send_ttl(channel = 5, state = 0) # send an "OFF" event on channel 5
-
-controller.stop # stop acquisition
 
 ```
 
