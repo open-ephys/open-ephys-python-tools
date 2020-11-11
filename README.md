@@ -8,11 +8,11 @@ This repository is meant to centralize and standardize Python-specific tools for
 
 It consists of three modules:
 
-1. *analysis* - loads data in every format supported by the GUI, using a common interface
+1. `analysis` - loads data in every format supported by the GUI, using a common interface
 
-2. *control* - allows a Python process to control the GUI, locally or over a network connection
+2. `control` - allows a Python process to control the GUI, locally or over a network connection
 
-3. *streaming* - (under development) receives data from the GUI for real-time analysis and visualization in Python
+3. `streaming` - (under development) receives data from the GUI for real-time analysis and visualization in Python
 
 ## Installation
 
@@ -20,7 +20,7 @@ From inside a Python virtual environment (`conda` or otherwise), run the followi
 
 ```bash
 
-$ pip install -e git+https://github.com/open-ephys/open-ephys-python-tools.git
+$ pip install git+https://github.com/open-ephys/open-ephys-python-tools
 
 ```
 
