@@ -25,7 +25,7 @@ SOFTWARE.
 import os
 import glob
 
-from .formats import KwikRecording, OpenEphysRecording, BinaryRecording, NwbRecording
+from open_ephys.analysis.formats import KwikRecording, OpenEphysRecording, BinaryRecording, NwbRecording
 
 class RecordNode:
     

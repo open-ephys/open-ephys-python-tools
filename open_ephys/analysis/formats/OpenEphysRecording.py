@@ -30,9 +30,9 @@ import numpy as np
 
 import xml.etree.ElementTree as ET
 
-from .helpers.oe_fast_loader import load
+from open_ephys.analysis.formats.helpers import load
 
-from open_ephys.analysis.Recording import Recording
+from open_ephys.analysis.recording import Recording
 
 class OpenEphysRecording(Recording):
     

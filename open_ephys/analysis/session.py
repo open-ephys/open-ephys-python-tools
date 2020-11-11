@@ -27,7 +27,7 @@ import os
 
 import warnings
 
-from .RecordNode import RecordNode
+from open_ephys.analysis.recordnode import RecordNode
 
 class Session:
     

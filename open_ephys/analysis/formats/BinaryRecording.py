@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 import json
 
-from open_ephys.analysis.Recording import Recording
+from open_ephys.analysis.recording import Recording
 
 class BinaryRecording(Recording):
     
