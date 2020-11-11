@@ -1,6 +1,6 @@
 # Open Ephys Python Tools
 
-![OE x Python Logo](logo.png)
+<img src="logo.png" width="300" />
 
 ## Overview
 
