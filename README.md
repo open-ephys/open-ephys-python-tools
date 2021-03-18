@@ -75,9 +75,9 @@ from open_ephys.control import NetworkControl
 
 url = '10.128.50.10' # IP address of the computer running Open Ephys
 
-controller = NetworkControl(url)
+gui = NetworkControl(url)
 
-controller.start # start acquisition
+gui.start # start acquisition
 
 ```
 

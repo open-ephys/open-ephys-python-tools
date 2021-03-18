@@ -83,3 +83,10 @@ class RecordNode:
         """
         
         self.recordings = self.formats[self.format].detect_recordings(self.directory)
+
+    def __str__(self):
+        """Returns a string with information about the RecordNode"""
+        
+        return os.path.basename(self.directory) + " (" + self.format + " format)"
+               
+               

@@ -76,4 +76,12 @@ class Session:
 
             self.recordnodes = [RecordNode(path) for path in recordnodepaths]
 
+    def __str__(self):
+        """Returns a string with information about the Session"""
+        
+        return ''.join(["\nOpen Ephys Recording Session Object\n",
+                        "Directory: " + self.directory + "\n\n"
+                        "<object>.recordnodes:\n"] + 
+                        ["  Index " + str(i) + ": " + r.__str__() + "\n" 
+                          for i, r in enumerate(self.recordnodes)])
 

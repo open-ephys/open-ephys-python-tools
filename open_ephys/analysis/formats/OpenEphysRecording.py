@@ -51,7 +51,10 @@ class OpenEphysRecording(Recording):
             
             for file_idx, file in enumerate(files):
                 
-                channel_number = int(os.path.basename(file).split('_')[1].split('.')[0].split('H')[1])
+                try:
+                    channel_number = int(os.path.basename(file).split('_')[1].split('.')[0].split('H')[1])
+                except IndexError:
+                    channel_number = int(os.path.basename(file).split('_')[1].split('.')[0]) - 1
                 
                 timestamps, samples, header = load(file, recording_index)
 

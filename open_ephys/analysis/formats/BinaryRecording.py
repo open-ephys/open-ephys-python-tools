@@ -77,10 +77,9 @@ class BinaryRecording(Recording):
         
         self._spikes = []
         
-        for num_channels in (4,2,1):
+        print(self.info['spikes'])
         
-            self._spikes.extend([self.Spikes(info, self.directory) for info in self.info['spikes']
-                              if info['num_channels'] == num_channels])
+        self._spikes.extend([self.Spikes(info, self.directory) for info in self.info['spikes']])
 
     
     def load_events(self):
