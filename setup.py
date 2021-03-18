@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='open-ephys-python-tools',
-      version='0.0.1',
+      version='0.1.0',
       description='Software tools for interfacing with the Open Ephys GUI',
       url='http://github.com/open-ephys/open-ephys-python-tools',
       author='Josh Siegle',
