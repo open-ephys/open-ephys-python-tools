@@ -74,19 +74,19 @@ Each `continuous` object has three properties:
 
 Event data for each recording is accessed via the `.events` property of each `Recording` object. This returns a pandas DataFrame with the following columns:
 
-- timestamp - the sample index at which this event occurred
-- channel - the channel on which this event occurred
-- nodeId - the ID of the processor from which this event originated
-- state - 1 or 0, to indicate whether this is a rising edge or falling edge event
+- `timestamp` - the sample index at which this event occurred
+- `channel` - the channel on which this event occurred
+- `nodeId` - the ID of the processor from which this event originated
+- `state` - 1 or 0, to indicate whether this is a rising edge or falling edge event
 
 
 ## Loading spike data
 
 If spike data has been saved by your Record Node (i.e., there is a Spike Detector or Spike Sorter upstream in the signal chain), this can be accessed via the `.spikes` property of each `Recording` object. This returns a list of spike sources, each of which has the following properties:
 
-- waveforms - `numpy.ndarray` containing spike waveforms, with dimensions of spikes x channels x samples
-- timestamps - `numpy.ndarray` of sample indices (one per spikes)
-- electrodes - `numpy.ndarray` containing the index of the electrode from which each spike originated
-- metadata - `dict` with metadata about each electrode
+- `waveforms` - `numpy.ndarray` containing spike waveforms, with dimensions of spikes x channels x samples
+- `timestamps` - `numpy.ndarray` of sample indices (one per spikes)
+- `electrodes` - `numpy.ndarray` containing the index of the electrode from which each spike originated
+- `metadata` - `dict` with metadata about each electrode
 
 
