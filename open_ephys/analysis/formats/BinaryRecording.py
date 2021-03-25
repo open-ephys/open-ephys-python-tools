@@ -96,7 +96,7 @@ class BinaryRecording(Recording):
         for events_directory in events_directories:
             
             node_name = os.path.basename(os.path.dirname(events_directory))
-            nodeId = int(node_name.split('-')[1].split('.')[0])
+            nodeId = int(node_name.split('-')[-1].split('.')[0])
             
             channels = np.load(os.path.join(events_directory, 'channels.npy'))
             timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
