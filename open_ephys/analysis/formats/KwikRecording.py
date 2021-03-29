@@ -79,7 +79,7 @@ class KwikRecording(Recording):
             
             f.close()
     
-    def __init__(self, directory, experiment_index, recording_index):
+    def __init__(self, directory, experiment_index=0, recording_index=0):
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
     def load_continuous(self):

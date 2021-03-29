@@ -43,6 +43,7 @@ class OpenEphysRecording(Recording):
             files = [file for file in files if os.path.basename(file).split('_')[0] == processor_id]
             
             self.timestamps, _, _ = load(files[0], recording_index)
+            self.global_timestamps = None
             
             self.samples = np.zeros((len(self.timestamps), len(files)))
             self.metadata = {}
@@ -59,7 +60,7 @@ class OpenEphysRecording(Recording):
                 timestamps, samples, header = load(file, recording_index)
 
                 self.samples[:,channel_number] = samples
-            
+                
     class Spikes:
         
         def __init__(self, files, recording_index):
@@ -91,7 +92,7 @@ class OpenEphysRecording(Recording):
             self.waveforms = self.waveforms[order,:,:]
             self.electrodes = self.electrodes[order]
             
-    def __init__(self, directory, experiment_index, recording_index):
+    def __init__(self, directory, experiment_index=0, recording_index=0):
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
        if experiment_index == 0:

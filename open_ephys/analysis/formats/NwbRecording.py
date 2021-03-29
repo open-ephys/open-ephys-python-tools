@@ -71,7 +71,7 @@ class NwbRecording(Recording):
             self.samples = dataset['data'][()]
             self.timestamps = dataset['timestamps'][()]
     
-    def __init__(self, directory, experiment_index, recording_index):
+    def __init__(self, directory, experiment_index=0, recording_index=0):
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
     def open_file(self):

@@ -65,14 +65,21 @@ def run(hostname='localhost', port=5557):
         with ctx.socket(zmq.SUB) as sock:
             sock.connect('tcp://%s:%d' % (hostname, port))
 
-            for etype in (TTL, SPIKE, MESSAGE):
-                sock.setsockopt(zmq.SUBSCRIBE, chr(etype).encode('utf-8'))
+            for eventType in (b'ttl', b'spike'):
+                sock.setsockopt(zmq.SUBSCRIBE, eventType)
 
             while True:
                 try:
                     parts = sock.recv_multipart()
-                    assert len(parts) == 3
+                    #assert len(parts) == 3
 
+                    for part in parts:
+                        print(part)
+                except KeyboardInterrupt:
+                    print()  # Add final newline
+                    break
+
+"""
                     etype = ord(parts[0])
                     timestamp_seconds = struct.unpack('d', parts[1])[0]
                     body = parts[2]
@@ -103,6 +110,7 @@ def run(hostname='localhost', port=5557):
                 except KeyboardInterrupt:
                     print()  # Add final newline
                     break
+                    """
 
 
 if __name__ == '__main__':

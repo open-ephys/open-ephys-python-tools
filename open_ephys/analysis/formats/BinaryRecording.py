@@ -63,21 +63,33 @@ class BinaryRecording(Recording):
             data = np.memmap(os.path.join(directory, 'continuous.dat'), dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
                                          self.metadata['num_channels']))
+            
+            self.global_timestamps = None
     
-    def __init__(self, directory, experiment_index, recording_index):
+    def __init__(self, directory, experiment_index=0, recording_index=0):
+        
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
        self.info = json.load(open(os.path.join(self.directory, 'structure.oebin')))
        
     def load_continuous(self):
         
-        self._continuous = [self.Continuous(info, self.directory) for info in self.info['continuous']]
+        
+        self._continuous = []
+        
+        
+        for info in self.info['continuous']:
+            
+            try:
+                c = self.Continuous(info, self.directory)
+            except FileNotFoundError:
+                pass
+            else:
+                self._continuous.append(c)
             
     def load_spikes(self):
         
         self._spikes = []
-        
-        print(self.info['spikes'])
         
         self._spikes.extend([self.Spikes(info, self.directory) for info in self.info['spikes']])
 
@@ -88,7 +100,8 @@ class BinaryRecording(Recording):
                                     'events',
                                     '*',
                                     'TTL_*')
-  
+        
+    
         events_directories = glob.glob(search_string)
         
         df = []
@@ -97,6 +110,7 @@ class BinaryRecording(Recording):
             
             node_name = os.path.basename(os.path.dirname(events_directory))
             nodeId = int(node_name.split('-')[-1].split('.')[0])
+            subProcessorId = int(node_name.split('-')[-1].split('.')[1])
             
             channels = np.load(os.path.join(events_directory, 'channels.npy'))
             timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
@@ -105,12 +119,15 @@ class BinaryRecording(Recording):
             df.append(pd.DataFrame(data = {'channel' : channels,
                               'timestamp' : timestamps,
                               'nodeId' : [nodeId] * len(channels),
+                              'subprocessorId' : [subProcessorId] * len(channels),
                               'state' : (channel_states / channels + 1 / 2).astype('int')}))
+            
+        
             
         if len(df) > 0:
                                                
-            self._events = pd.concat(df)
-            
+            self._events = pd.concat(df).sort_values(by='timestamp')
+
         else:
             
             self._events = None
