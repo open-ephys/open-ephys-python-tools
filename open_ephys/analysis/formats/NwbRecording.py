@@ -72,7 +72,7 @@ class NwbRecording(Recording):
             self.timestamps = dataset['timestamps'][()]
             
             self.metadata = {}
-            self.metadata['sample_rate'] = np.mean(np.diff(self.timestamps))
+            self.metadata['sample_rate'] = 1/np.mean(np.diff(self.timestamps))
             self.metadata['processor_id'] = int(dataset.name.split('_')[1])
             self.metadata['subprocessor_id'] = 0
     
