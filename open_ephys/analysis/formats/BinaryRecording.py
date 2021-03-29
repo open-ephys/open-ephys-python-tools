@@ -118,8 +118,8 @@ class BinaryRecording(Recording):
         
             df.append(pd.DataFrame(data = {'channel' : channels,
                               'timestamp' : timestamps,
-                              'nodeId' : [nodeId] * len(channels),
-                              'subprocessorId' : [subProcessorId] * len(channels),
+                              'processor_id' : [nodeId] * len(channels),
+                              'subprocessor_id' : [subProcessorId] * len(channels),
                               'state' : (channel_states / channels + 1 / 2).astype('int')}))
             
         

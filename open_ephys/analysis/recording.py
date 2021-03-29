@@ -49,10 +49,11 @@ class Recording(ABC):
         - electrodes (index of electrode from which each spike originated)
         - metadata (contains information about each electrode)
         
-    Event data is stored in a pandas DataFrame containing four columns:
+    Event data is stored in a pandas DataFrame containing five columns:
         - timestamp
         - channel
-        - nodeId (processor ID)
+        - processor_id
+        - subprocessor_id
         - state (1 or 0)
     
     """
@@ -129,7 +130,7 @@ class Recording(ABC):
         """Returns a string with information about the Recording"""
         pass
     
-    def add_sync_channel(self, channel, nodeId, subprocessor=0, main=False):
+    def add_sync_channel(self, channel, processor_id, subprocessor_id=0, main=False):
         """Specifies an event channel to use for timestamp synchronization. Each 
         sync channel in a recording should receive its input from the same 
         physical digital input line.
@@ -141,9 +142,9 @@ class Recording(ABC):
         ----------
         channel : int
             event channel number
-        nodeId : int
+        processor_id : int
             ID for the processor receiving sync events
-        subprocessor : int
+        subprocessor_id : int
             index of the subprocessor receiving sync events
             default = 0
         main : bool
@@ -161,16 +162,16 @@ class Recording(ABC):
                                 'To override, add it again with main=False.')
                 
         matching_node = [sync for sync in self.sync_lines 
-                         if sync['nodeId'] == nodeId and
-                            sync['subprocessor'] == subprocessor]
+                         if sync['processor_id'] == processor_id and
+                            sync['subprocessor_id'] == subprocessor_id]
         
         if len(matching_node) == 1:
             self.sync_lines.remove(matching_node[0])
             warnings.warn('Another sync line exists for this node, overwriting.')
         
         self.sync_lines.append({'channel' : channel,
-                                'nodeId' : nodeId,
-                                'subprocessor' : subprocessor,
+                                'processor_id' : processor_id,
+                                'subprocessor_id' : subprocessor_id,
                                 'main' : main})
         
     def compute_global_timestamps(self):
@@ -198,8 +199,8 @@ class Recording(ABC):
         main = main[0]
             
         main_events = self.events[(self.events.channel == main['channel']) & 
-                   (self.events.nodeId == main['nodeId']) & 
-                   (self.events.subprocessorId == main['subprocessor']) &
+                   (self.events.processor_id == main['processor_id']) & 
+                   (self.events.subprocessor_id == main['subprocessor_id']) &
                    (self.events.state == 1)]
         
         main_start_sample = main_events.iloc[0].timestamp
@@ -210,15 +211,15 @@ class Recording(ABC):
         
         for continuous in self.continuous:
 
-            if (continuous.metadata['processor_id'] == main['nodeId']) and \
-               (continuous.metadata['subprocessor_id'] == main['subprocessor']):
+            if (continuous.metadata['processor_id'] == main['processor_id']) and \
+               (continuous.metadata['subprocessor_id'] == main['subprocessor_id']):
                main['sample_rate'] = continuous.metadata['sample_rate']
         
         for aux in aux_channels:
             
             aux_events = self.events[(self.events.channel == aux['channel']) & 
-                   (self.events.nodeId == aux['nodeId']) & 
-                   (self.events.subprocessorId == aux['subprocessor']) &
+                   (self.events.processor_id == aux['processor_id']) & 
+                   (self.events.subprocessor_id == aux['subprocessor_id']) &
                    (self.events.state == 1)]
             
             aux_start_sample = aux_events.iloc[0].timestamp
@@ -233,8 +234,8 @@ class Recording(ABC):
             
             for continuous in self.continuous:
 
-                if (continuous.metadata['processor_id'] == sync['nodeId']) and \
-                   (continuous.metadata['subprocessor_id'] == sync['subprocessor']):
+                if (continuous.metadata['processor_id'] == sync['processor_id']) and \
+                   (continuous.metadata['subprocessor_id'] == sync['subprocessor_id']):
                        
                     continuous.global_timestamps = \
                         ((continuous.timestamps - sync['start']) * sync['scaling'] \

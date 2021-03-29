@@ -41,6 +41,7 @@ class OpenEphysRecording(Recording):
         def __init__(self, files, processor_id, recording_index):
             
             files = [file for file in files if os.path.basename(file).split('_')[0] == processor_id]
+            files.sort()
             
             self.timestamps, _, _ = load(files[0], recording_index)
             self.global_timestamps = None
@@ -49,6 +50,9 @@ class OpenEphysRecording(Recording):
             self.metadata = {}
             self.metadata['names'] = []
             self.metadata['processor_id'] = processor_id
+            self.metadata['subprocessor_id'] = 0 # format doesn't currently support subprocessors
+            
+            start_index = None
             
             for file_idx, file in enumerate(files):
                 
@@ -56,10 +60,13 @@ class OpenEphysRecording(Recording):
                     channel_number = int(os.path.basename(file).split('_')[1].split('.')[0].split('H')[1])
                 except IndexError:
                     channel_number = int(os.path.basename(file).split('_')[1].split('.')[0]) - 1
+                    
+                if start_index is None:
+                    start_index = channel_number
                 
                 timestamps, samples, header = load(file, recording_index)
 
-                self.samples[:,channel_number] = samples
+                self.samples[:,channel_number-start_index] = samples
                 
     class Spikes:
         
@@ -125,7 +132,8 @@ class OpenEphysRecording(Recording):
         
         self._events = pd.DataFrame(data = {'channel' : channel + 1,
                               'timestamp' : timestamps,
-                              'nodeId' : processor_id,
+                              'processor_id' : processor_id,
+                              'subprocessor_id' : [0] * len(timestamps),
                               'state' : state})
 
     def find_continuous_files(self):

@@ -70,6 +70,11 @@ class NwbRecording(Recording):
             
             self.samples = dataset['data'][()]
             self.timestamps = dataset['timestamps'][()]
+            
+            self.metadata = {}
+            self.metadata['sample_rate'] = np.mean(np.diff(self.timestamps))
+            self.metadata['processor_id'] = int(dataset.name.split('_')[1])
+            self.metadata['subprocessor_id'] = 0
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
        Recording.__init__(self, directory, experiment_index, recording_index)  
@@ -109,12 +114,13 @@ class NwbRecording(Recording):
         dataset = f['acquisition']['timeseries']['recording' + 
                                                  str(self.recording_index+1)]['events']['ttl1']
         
-        nodeId = int(dataset.attrs['source'].decode('utf-8').split('_')[1])
+        nodeId = int(dataset.attrs['source'].split('_')[1])
         timestamps = dataset['timestamps']
         
         self._events = pd.DataFrame(data = {'channel' : dataset['control'][()],
                               'timestamp' : timestamps,
-                              'nodeId' : [nodeId] * len(timestamps),
+                              'processor_id' : [nodeId] * len(timestamps),
+                              'subprocessor_id' : [0] * len(timestamps),
                               'state' : (np.sign(dataset['data'][()]) + 1 / 2).astype('int')})
         
         f.close()

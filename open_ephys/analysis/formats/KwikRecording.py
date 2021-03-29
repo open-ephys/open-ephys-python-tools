@@ -77,6 +77,11 @@ class KwikRecording(Recording):
 
             self.timestamps = np.arange(start_time, start_time + self.samples.shape[0])
             
+            self.metadata = {}
+            self.metadata['processor_id'] = int(os.path.basename(file).split('_')[1].split('.raw')[0])
+            self.metadata['subprocessor_id'] = 0 # format doesn't support subprocessors
+            self.metadata['sample_rate'] =  dataset['application_data']['channel_sample_rates'][0]
+            
             f.close()
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
@@ -121,7 +126,8 @@ class KwikRecording(Recording):
         
         self._events = pd.DataFrame(data = {'channel' : dataset['event_channels'][()][mask] + 1,
                               'timestamp' : timestamps[mask],
-                              'nodeId' : dataset['nodeID'][()][mask],
+                              'processor_id' : dataset['nodeID'][()][mask],
+                              'subprocessor_id' : [0] * np.sum(mask),
                               'state' : dataset['eventID'][mask].astype('int')})
         
         f.close()
