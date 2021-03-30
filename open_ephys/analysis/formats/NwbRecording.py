@@ -77,7 +77,9 @@ class NwbRecording(Recording):
             self.metadata['subprocessor_id'] = 0
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
+        
        Recording.__init__(self, directory, experiment_index, recording_index)  
+       self._format = 'nwb'
        
     def open_file(self):
         

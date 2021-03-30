@@ -76,6 +76,10 @@ class Recording(ABC):
             self.load_spikes()
         return self._spikes
     
+    @property
+    def format(self):
+        return self._format
+    
     def __init__(self, directory, experiment_index=0, recording_index=0):
         """ Construct a Recording object, which provides access to
         data from one recording (start/stop acquisition or start/stop recording)
@@ -239,7 +243,24 @@ class Recording(ABC):
                        
                     continuous.global_timestamps = \
                         ((continuous.timestamps - sync['start']) * sync['scaling'] \
-                            + sync['offset']) / sync['sample_rate']
+                            + sync['offset']) 
+                            
+                    if self.format != 'nwb': # already scaled to seconds
+                        continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate']
+                            
+            event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
+                   (self.events.subprocessor_id == sync['subprocessor_id'])].index.values
+            
+            global_timestamps = (self.events.loc[event_inds].timestamp - sync['start']) \
+                                  * sync['scaling'] \
+                                   + sync['offset']
+                                   
+            if self.format != 'nwb': #already scaled to seconds
+                global_timestamps = global_timestamps / sync['sample_rate']
+            
+            self.events.at[event_inds, 'global_timestamp'] = global_timestamps
+            
+            
                             
                                               
         

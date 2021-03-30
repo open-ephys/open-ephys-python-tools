@@ -71,6 +71,7 @@ class BinaryRecording(Recording):
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
        self.info = json.load(open(os.path.join(self.directory, 'structure.oebin')))
+       self._format = 'binary'
        
     def load_continuous(self):
         
@@ -126,7 +127,7 @@ class BinaryRecording(Recording):
             
         if len(df) > 0:
                                                
-            self._events = pd.concat(df).sort_values(by='timestamp')
+            self._events = pd.concat(df).sort_values(by='timestamp', ignore_index=True)
 
         else:
             

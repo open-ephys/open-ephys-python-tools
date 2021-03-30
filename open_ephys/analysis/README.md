@@ -90,3 +90,44 @@ If spike data has been saved by your Record Node (i.e., there is a Spike Detecto
 - `metadata` - `dict` with metadata about each electrode
 
 
+## Synchronizing timestamps
+
+If your recording contains data from multiple processors or subprocessors, you'll likely want to synchronize their timestamps prior to further analysis.
+
+Assuming they each have one event channel that was connected to the same *physical digital input line*, synchronization is straightforward.
+
+First, indicate which event channels share the sync input (this will depend on your recording configuration):
+
+```python
+recording = session.recordnodes[0].recording[0]
+
+recording.add_sync_channel(8,          # event channel number
+                           102,        # processor ID
+                           0,          # subprocessor ID (defaults to 0)
+                           main=True)  # use as the main timestamps
+
+recording.add_sync_channel(1,          # event channel number
+                           100,        # processor ID
+                           0,          # subprocessor ID (defaults to 0)
+                           main=False)  # align to the main timestamps
+
+recording.add_sync_channel(1,          # event channel number
+                           100,        # processor ID
+                           1,          # subprocessor ID (defaults to 0)
+                           main=False)  # align to the main timestamps
+```
+
+You must have one and only one "main" processor, and at least one "auxiliary" processor for synchronization to work.
+
+Next, running:
+
+```python
+recording.compute_global_timestamps()
+```
+
+will generate `global_timestamps` values for each `Continuous` object with a sync channel, as well as a `global_timestamp` column in the `recording.events` DataFrame.
+
+Now, you can work with your data aligned to a common timebase.
+
+
+

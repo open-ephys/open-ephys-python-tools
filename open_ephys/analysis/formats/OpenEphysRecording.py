@@ -100,12 +100,15 @@ class OpenEphysRecording(Recording):
             self.electrodes = self.electrodes[order]
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
+        
        Recording.__init__(self, directory, experiment_index, recording_index)  
        
        if experiment_index == 0:
            self.experiment_id = ""
        else:
            self.experiment_id = "_" + str(experiment_index+1)
+           
+       self._format = 'open-ephys'
        
     def load_continuous(self):
         
