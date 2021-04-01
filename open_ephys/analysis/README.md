@@ -76,7 +76,8 @@ Event data for each recording is accessed via the `.events` property of each `Re
 
 - `timestamp` - the sample index at which this event occurred
 - `channel` - the channel on which this event occurred
-- `nodeId` - the ID of the processor from which this event originated
+- `processor_id` - the ID of the processor from which this event originated
+- `subprocessor_id` - the ID of the subprocessor from which this event originated
 - `state` - 1 or 0, to indicate whether this is a rising edge or falling edge event
 
 
