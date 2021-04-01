@@ -12,7 +12,7 @@ It consists of three modules:
 
 2. `control` - allows a Python process to control the GUI, locally or over a network connection
 
-3. `streaming` - (under development) receives data from the GUI for real-time analysis and visualization in Python
+3. `streaming` - receives data from the GUI for real-time analysis and visualization in Python
 
 ## Installation
 
