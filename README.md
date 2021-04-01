@@ -85,8 +85,45 @@ More details about available commands can be found in the [control module README
 
 ### streaming
 
-(coming soon)
+First, launch an instance of Open Ephys, and make sure a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin is in the signal chain.
 
+Then, from your Python process:
+
+```python
+
+from open_ephys.streaming import EventListener
+
+url = '10.128.50.10' # IP address of the computer running Open Ephys
+
+stream = EventListener(url)
+
+```
+
+Next, define a callback function to handle each incoming event:
+
+```python
+
+def ttl_callback(event_info):
+
+    print("Event occurred on channel " 
+          + info['channel'] 
+          + " at " 
+          + info['timing']['timestamp'] / info['timing']['sampleRate'] 
+          + " seconds.")
+
+```
+
+Finally, start listening for events by running...
+
+```python
+
+stream.start(ttl_callback=ttl_callback)
+
+```
+
+...and press `ctrl-C` to stop the process.
+
+More details about available commands can be found in the [streaming module README file](open_ephys/streaming/README.md).
 
 ## Contributing
 

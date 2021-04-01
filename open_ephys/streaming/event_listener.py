@@ -1,117 +1,142 @@
-from __future__ import print_function, unicode_literals
-from collections import OrderedDict
-from itertools import chain, repeat
-try:
-    from itertools import izip
-except ImportError:
-    izip = zip  # Python 3
-import struct
+"""
+MIT License
+
+Copyright (c) 2020 Open Ephys
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 
 import zmq
+import json
+
+def default_spike_callback(info):
+    """
+    Code to run when a spike event is received.
+
+    Parameters
+    ----------
+    info - dict 
+
+    """
+
+    print(info)
+
+def default_ttl_callback(info):
+    """
+    Code to run when a TTL event is received.
+
+    Parameters
+    ----------
+    info - dict 
+
+    """
+
+    print(info)
 
 
-# Event types
-TTL = 3
-SPIKE = 4
-MESSAGE = 5
-BINARY_MSG = 6
+class EventListener:
 
-
-def unpacker(format, *fields):
-    s = struct.Struct(format)
-
-    def unpack(data):
-        values = s.unpack(data[:s.size])
-        if (len(values) == 1) and (not fields):
-            assert len(data) == s.size
-            return values[0], ''
-        assert len(values) <= len(fields)
-        return (OrderedDict(izip(fields, chain(values, repeat(None)))),
-                data[s.size:])
-
-    return unpack
-
-
-unpack_standard = unpacker('3BxB',
-                           'node_id',
-                           'event_id',
-                           'event_channel',
-                           'source_node_id',
-                           )
-
-
-unpack_ttl = unpacker('<Q')
-
-
-unpack_spike = unpacker('<2q2x5H3B2fH',
-                        'timestamp',
-                        'timestamp_software',
-                        'n_channels',
-                        'n_samples',
-                        'sorted_id',
-                        'electrode_id',
-                        'channel',
-                        'color_r', 'color_g', 'color_b',
-                        'pc_proj_x', 'pc_proj_y',
-                        'sampling_frequency_hz',
-                        'data',
-                        'gain',
-                        'threshold',
-                        )
-
-
-def run(hostname='localhost', port=5557):
-    with zmq.Context() as ctx:
-        with ctx.socket(zmq.SUB) as sock:
-            sock.connect('tcp://%s:%d' % (hostname, port))
-
-            for eventType in (b'ttl', b'spike'):
-                sock.setsockopt(zmq.SUBSCRIBE, eventType)
-
-            while True:
-                try:
-                    parts = sock.recv_multipart()
-                    #assert len(parts) == 3
-
-                    for part in parts:
-                        print(part)
-                except KeyboardInterrupt:
-                    print()  # Add final newline
-                    break
-
-"""
-                    etype = ord(parts[0])
-                    timestamp_seconds = struct.unpack('d', parts[1])[0]
-                    body = parts[2]
-
-                    if etype == SPIKE:
-                        spike, body = unpack_spike(body)
-                        print('%g: Spike: %s' % (timestamp_seconds, spike))
-                        body = ''  # TODO: unpack other data
-
-                    else:
-                        header, body = unpack_standard(body)
+    """
+    A class that communicates with the Open Ephys Event Broadcaster plugin.
     
-                        if etype == TTL:
-                            word, body = unpack_ttl(body)
-                            print('%g: TTL: Channel %d: %s' %
-                                  (timestamp_seconds,
-                                   header['event_channel'] + 1,
-                                   'ON' if header['event_id'] else 'OFF'))
+    See: https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html
+    for more info.
     
-                        elif etype == MESSAGE:
-                            msg, body = body.decode('utf-8'), ''
-                            print('%g: Message: %s' % (timestamp_seconds, msg))
+    It can be used to receive TTL events and spike times over a network connection.
+
+    IMPORTANT: The Event Broadcaster must be configured to send events in 
+    "Header/JSON" format.
+    
+    To use, first create a EventBroadcaster object:
+        
+        >> stream = EventBroadcaster()
+        
+    Then, define a callback function for TTL events, spikes, or both:
+        
+        >> def ttl_callback_function(event_info):
+            # how should the program respond to the incoming event?
+        
+    Finally, start the stream to listen for events.
+        
+        >> stream.start(ttl_callback = ttl_callback_function)
+
+    This will call your desired function whenever a new event is received.
+    
+    """
 
 
-                    # Check that all data was consumed
-                    assert len(body) == 0
+    def __init__(self, ip_address = '127.0.0.1',
+                 port = 5557):
+        
+        """ Construct an EventBroadcaster object
 
-                except KeyboardInterrupt:
-                    print()  # Add final newline
-                    break
-                    """
+        Parameters
+        ----------
+        ip_address : string
+            IP address of the computer running the GUI
+            Defaults to localhost
+        port : int
+            The port of the Event Broadcaster plugin to be controlled
+            Default to 5557
+        
+        """
+        
+        self.url = "tcp://%s:%d" % (ip_address, port)
+        
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.SUB)
+        self.socket.connect(self.url)
+
+        for eventType in (b'ttl', b'spike'):
+            self.socket.setsockopt(zmq.SUBSCRIBE, eventType)
 
 
-if __name__ == '__main__':
-    run()
+
+    def start(self, 
+        ttl_callback = default_ttl_callback,
+        spike_callback = default_spike_callback):
+
+        """
+        Starts the listening process, with separate callbacks
+        for TTL events and spikes.
+
+        The callback functions should be of the form:
+
+          function(info)
+
+        where `info` is a Python dictionary.
+
+        See the README file for the dictionary contents.
+
+        """
+
+        while True:
+            try:
+                parts = self.socket.recv_multipart()
+
+                info = json.loads(parts[1].decode('utf-8'))
+
+                if info['type'] == 'spike':
+                    spike_callback(info)
+                else:
+                    ttl_callback(info)
+
+            except KeyboardInterrupt:
+                print()  # Add final newline
+                break
