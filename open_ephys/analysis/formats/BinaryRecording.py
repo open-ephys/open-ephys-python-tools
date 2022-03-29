@@ -60,7 +60,7 @@ class BinaryRecording(Recording):
             self.metadata['names'] = [ch['channel_name'] for ch in info['channels']]
             
             self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
-            data = np.memmap(os.path.join(directory, 'continuous.dat'), dtype='int16')
+            data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
                                          self.metadata['num_channels']))
             
