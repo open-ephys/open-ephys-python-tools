@@ -52,6 +52,8 @@ class BinaryRecording(Recording):
             
             directory = os.path.join(base_directory, 'continuous', info['folder_name'])
 
+            self.name = info['folder_name']
+
             self.metadata = {}
             self.metadata['sample_rate'] = info['sample_rate']
             self.metadata['num_channels'] = info['num_channels']
@@ -60,10 +62,12 @@ class BinaryRecording(Recording):
             self.metadata['names'] = [ch['channel_name'] for ch in info['channels']]
             
             self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+            self.synchronized = np.load(os.path.join(directory, 'synchronized_timestamps.npy'))
+
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
                                          self.metadata['num_channels']))
-            
+
             self.global_timestamps = None
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
@@ -96,32 +100,35 @@ class BinaryRecording(Recording):
 
     
     def load_events(self):
-        
         search_string = os.path.join(self.directory,
                                     'events',
                                     '*',
-                                    'TTL_*')
+                                    'TTL*')
         
-    
         events_directories = glob.glob(search_string)
         
         df = []
-        
+        streamIdx = 0
         for events_directory in events_directories:
             
-            node_name = os.path.basename(os.path.dirname(events_directory))
-            nodeId = int(node_name.split('-')[-1].split('.')[0])
-            subProcessorId = int(node_name.split('-')[-1].split('.')[1])
+            node_name = os.path.basename(os.path.dirname(events_directory)).split('.')
+            node = node_name[0]
+            nodeId = node.split("-")[-1]
+            stream = ''.join(node_name[1:])
             
-            channels = np.load(os.path.join(events_directory, 'channels.npy'))
+            streamIdx += 1
+            
+            channels = np.load(os.path.join(events_directory, 'states.npy'))
+            samples = np.load(os.path.join(events_directory, 'samples.npy'))
+            channel_states = np.load(os.path.join(events_directory, 'states.npy'))
             timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
-            channel_states = np.load(os.path.join(events_directory, 'channel_states.npy'))
         
             df.append(pd.DataFrame(data = {'channel' : channels,
+                              'sample' : samples,
                               'timestamp' : timestamps,
                               'processor_id' : [nodeId] * len(channels),
-                              'subprocessor_id' : [subProcessorId] * len(channels),
-                              'state' : (channel_states / channels + 1 / 2).astype('int')}))
+                              'subprocessor_id' : [streamIdx] * len(channels),
+                              'state' : (channel_states > 0).astype('int')}))
             
         
             
