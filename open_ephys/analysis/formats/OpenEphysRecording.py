@@ -28,7 +28,7 @@ import os
 import pandas as pd
 import numpy as np
 
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as XmlElementTree
 
 from open_ephys.analysis.formats.helpers import load
 
@@ -38,10 +38,7 @@ class OpenEphysRecording(Recording):
     
     class Continuous:
         
-        def __init__(self, files, processor_id, recording_index):
-            
-            files = [file for file in files if os.path.basename(file).split('_')[0] == processor_id]
-            files.sort()
+        def __init__(self, files, recording_index):
             
             self.timestamps, _, _ = load(files[0], recording_index)
             self.global_timestamps = None
@@ -49,24 +46,14 @@ class OpenEphysRecording(Recording):
             self.samples = np.zeros((len(self.timestamps), len(files)))
             self.metadata = {}
             self.metadata['names'] = []
-            self.metadata['processor_id'] = processor_id
-            self.metadata['subprocessor_id'] = 0 # format doesn't currently support subprocessors
-            
+
             start_index = None
             
             for file_idx, file in enumerate(files):
-                
-                try:
-                    channel_number = int(os.path.basename(file).split('_')[1].split('.')[0].split('H')[1])
-                except IndexError:
-                    channel_number = int(os.path.basename(file).split('_')[1].split('.')[0]) - 1
-                    
-                if start_index is None:
-                    start_index = channel_number
-                
+                 
                 timestamps, samples, header = load(file, recording_index)
 
-                self.samples[:,channel_number-start_index] = samples
+                self.samples[:,file_idx] = samples
                 
     class Spikes:
         
@@ -101,24 +88,30 @@ class OpenEphysRecording(Recording):
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
-       Recording.__init__(self, directory, experiment_index, recording_index)  
+        Recording.__init__(self, directory, experiment_index, recording_index)  
        
-       if experiment_index == 0:
-           self.experiment_id = ""
-       else:
-           self.experiment_id = "_" + str(experiment_index+1)
+        if experiment_index == 0:
+            self.experiment_id = ""
+        else:
+            self.experiment_id = "_" + str(experiment_index+1)
+
+        self.experiment_info = os.path.join(directory, 'structure' + self.experiment_id + '.openephys')
            
-       self._format = 'open-ephys'
+        self._format = 'open-ephys'
        
     def load_continuous(self):
         
-        files = self.find_continuous_files()
-        
-        processor_ids = np.unique(np.array([os.path.basename(fname).split('_')[0]
-                                            for fname in files]))
-        
-        self._continuous = [self.Continuous(files, processor_id, self.recording_index)
-                            for processor_id in processor_ids]
+        files, stream_inds, unique_stream_inds = self.find_continuous_files()
+        self._continuous = []
+
+        for stream_index in unique_stream_inds:
+
+            files_for_stream = [ ]
+            for ind, filename in enumerate(files):
+                if stream_inds[ind] == stream_index:
+                    files_for_stream.append(os.path.join(self.directory, filename))
+
+            self._continuous.append(self.Continuous(files_for_stream, self.recording_index))
         
     def load_spikes(self):
         
@@ -129,39 +122,57 @@ class OpenEphysRecording(Recording):
     
     def load_events(self):
         
-        events_file = os.path.join(self.directory, 'all_channels' + self.experiment_id + ".events")
+        tree = XmlElementTree.parse(self.experiment_info)
+        root = tree.getroot()
+
+        events = []
         
-        timestamps, processor_id, state, channel, header = load(events_file, self.recording_index)
-        
-        self._events = pd.DataFrame(data = {'channel' : channel + 1,
+        for recording_index, child in enumerate(root):
+            if (recording_index == self.recording_index):
+                for stream_index, stream in enumerate(child):
+                    for file_index, file in enumerate(stream):
+                        if file.tag == 'EVENTS':
+                            timestamps, processor_id, state, channel, header = \
+                                load(os.path.join(self.directory, 
+                                      file.get('filename')), self.recording_index)
+                            events.append(pd.DataFrame(data = {'line' : channel + 1,
                               'timestamp' : timestamps,
                               'processor_id' : processor_id,
-                              'subprocessor_id' : [0] * len(timestamps),
-                              'state' : state})
+                              'stream_index' : [stream_index] * len(timestamps),
+                              'state' : state}))
+
+        self._events = pd.concat(events).sort_values(by='timestamp')
+
+    def load_messages(self):
+        
+        messages_file = os.path.join(self.directory, 'messages' + experiment_id + '.events')
+
+        df = pd.read_csv(messages_file, header=None, names=['timestamp', 'message'])
+        splits = np.where(df.message == ' Software Time (milliseconds since midnight Jan 1st 1970 UTC)')[0]
+        splits = np.concatenate((splits, np.array([len(df)])))
+
+        self._messages = df.iloc[splits[self.recording_index]+1:splits[self.recording_index+1]]
 
     def find_continuous_files(self):
     
-        f = glob.glob(os.path.join(self.directory, '*continuous'))
-        f.sort()
-        
-        experiment_ids = [os.path.basename(name).split('_')[1] for name in f]
-        
-        experiment1_files = []
-        experimentN_files = []
-        
-        for idx, name in enumerate(f):
-            
-            if experiment_ids[idx].find('continuous') > 0:
-                experiment1_files.append(name)
-            else:
-                experimentN_files.append(name)
+        tree = XmlElementTree.parse(self.experiment_info)
+        root = tree.getroot()
 
-        if self.experiment_index == 0:
-            return experiment1_files
-        else:
-            return [name for name in experimentN_files 
-                    if (os.path.basename(name).split('_')[2].split('.')[0] == str(self.experiment_index + 1))]
+        continuous_files = []
+        stream_indexes = []
+        unique_stream_indexes = []
         
+        for recording_index, child in enumerate(root):
+            if (recording_index == self.recording_index):
+                for stream_index, stream in enumerate(child):
+                    unique_stream_indexes.append(stream_index)
+                    for file_index, file in enumerate(stream):
+                        if file.tag == 'CHANNEL':
+                            continuous_files.append(file.get('filename'))
+                            stream_indexes.append(stream_index)
+        
+        return continuous_files, stream_indexes, unique_stream_indexes
+
     def find_spikes_files(self, file_type):
     
         search_string = {'single electrode' : 'SE',
@@ -219,65 +230,19 @@ class OpenEphysRecording(Recording):
     
     @staticmethod
     def detect_recordings(directory):
-        
+
         recordings = []
         
-        message_files = glob.glob(os.path.join(directory, 'messages*events'))
-        message_files.sort()
-        
-        for experiment_index, message_file in enumerate(message_files):
-             
-            if experiment_index == 0:
-                experiment_id = ""
-            else:
-                experiment_id = "_" + str(experiment_index + 1)
-                
-            continuous_info = glob.glob(os.path.join(directory, 'Continuous_Data' 
-                                                     + experiment_id 
-                                                     + '.openephys'))
-            
-            found_recording = False
-            
-            if len(continuous_info) > 0:
-                tree = ET.parse(continuous_info[0])
-                root = tree.getroot()
-                for recording_index, child in enumerate(root):
-                    recordings.append(OpenEphysRecording(directory, 
-                                                       experiment_index,
-                                                       recording_index))
-                found_recording = True
-                
-            if not found_recording:
-                event_file = glob.glob(os.path.join(directory, 'all_channels' + experiment_id + '.events'))
-                
-                if len(event_file) > 0:
-                    
-                    events = loadEvents(event_file[0])
-                    
-                    for recording_index in np.unique(events['recordingNumber']):
-                        
-                        recordings.append(OpenEphysRecording(directory, 
-                                                           experiment_index,
-                                                           recording_index))
-                    
-                    found_recording = True
-                    
-            if not found_recording:
-                spikes_files = glob.glob(os.path.join(directory, '*n[0-9]' + experiment_id + '.spikes'))
-                
-                if len(spikes_files) > 0:
-                    
-                    spikes = loadSpikes(spikes_files[0])
-                    
-                    for recording_index in np.unique(spikes['recordingNumber']):
-                        
-                        recordings.append(OpenEphysRecording(directory, 
-                                                           experiment_index,
-                                                           recording_index))
-                        
-                    found_recording = True
-                
-            if not found_recording:
-                raise(IOError('Could not find any data files.'))
+        experiment_info = glob.glob(os.path.join(directory, 'structure*.openephys'))
+        experiment_info.sort()
+
+        for experiment_index, file_name in enumerate(experiment_info):
+
+            tree = XmlElementTree.parse(file_name)
+            root = tree.getroot()
+            for recording_index, child in enumerate(root):
+                recordings.append(OpenEphysRecording(directory, 
+                                                    experiment_index,
+                                                    recording_index))
                 
         return recordings

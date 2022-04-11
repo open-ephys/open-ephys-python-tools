@@ -36,7 +36,7 @@ class NwbRecording(Recording):
     
     class Spikes:
         
-        def __init__(self, dataset, channel_count):
+        def __init__(self, dataset):
             
             timestamps = []
             waveforms = []
@@ -68,64 +68,73 @@ class NwbRecording(Recording):
         
         def __init__(self, dataset):
             
-            self.samples = dataset['data'][()]
-            self.timestamps = dataset['timestamps'][()]
+            self.samples = self.nwb['acquisition'][dataset]['data'][()]
+            self.timestamps = self.nwb['acquisition'][dataset]['timestamps'][()]
             
             self.metadata = {}
             self.metadata['sample_rate'] = 1/np.mean(np.diff(self.timestamps))
-            self.metadata['processor_id'] = int(dataset.name.split('_')[1])
-            self.metadata['subprocessor_id'] = 0
+            self.metadata['name'] = dataset
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
        Recording.__init__(self, directory, experiment_index, recording_index)  
        self._format = 'nwb'
-       
-    def open_file(self):
-        
-        return h5.File(os.path.join(self.directory, 'experiment_' + 
+       self.nwb = h5.File(os.path.join(self.directory, 'experiment' + 
                                  str(self.experiment_index+1) + '.nwb'), 'r')
+    
+    def __delete__(self):
+
+        self.nwb.close()
        
     def load_continuous(self):
         
-        f = self.open_file()
+        datasets = list(self.nwb['acquisition'].keys())
         
-        dataset = f['acquisition']['timeseries']['recording' + 
-                                                 str(self.recording_index+1)]['continuous']
-        
-        self._continuous = [self.Continuous(dataset[processor]) for processor in dataset.keys()]
-        
-        f.close()
+        self._continuous = [self.Continuous(dataset) for dataset in datasets
+                            if (dataset[:8] != 'messages' and
+                                dataset[:13] != 'sync_messages' and
+                                dataset[-4:] != '.TTL' and
+                                dataset[-7:] != '.spikes')]
     
     def load_spikes(self):
         
-        f = self.open_file()
-        
-        dataset = f['acquisition']['timeseries']['recording' + str(self.recording_index+1)]['spikes']
-        
-        spikes = [self.Spikes(dataset, channel_count) for channel_count in (1,2,4)]
-        
-        self._spikes = [S for S in spikes if len(S.timestamps) > 0]
-        
-        f.close()
-    
+        datasets = list(self.nwb['acquisition'].keys())   
+
+        self._spikes = [self.Spikes(dataset) for dataset in datasets
+                        if (dataset[-7:] == '.spikes')]
+
     def load_events(self):
+         
+        datasets = list(self.nwb['acquisition'].keys())   
+
+        events = []
+        processor_ids = []
         
-        f = self.open_file()
+        for dataset in datasets:
+            
+            if (dataset[-4:] == '.TTL'):
+
+                processor_id = int(dataset.split('.')[0].split('-')[1])
+
+                if processor_id not in processor_ids:
+                    processor_ids.append(processor_id)
+                    stream_id = 0
+                else:
+                    stream_id += 1
+                
+                ds = self.nwb['acquisition'][dataset]
+                channel_states = ds['data'][()]
+                timestamps = ds['timestamps']
+                
+                events.append(pd.DataFrame(
+                    data = {'line' : np.abs(channel_states),
+                            'timestamp' : timestamps,
+                            'processor_id' : [processor_id] * len(channel_states),
+                            'stream_index' : [stream_id] * len(channel_states),
+                            'state' : (np.sign(channel_states) + 1 / 2).astype('int')}))
         
-        dataset = f['acquisition']['timeseries']['recording' + 
-                                                 str(self.recording_index+1)]['events']['ttl1']
-        
-        nodeId = int(dataset.attrs['source'].split('_')[1])
-        timestamps = dataset['timestamps']
-        
-        self._events = pd.DataFrame(data = {'channel' : dataset['control'][()],
-                              'timestamp' : timestamps,
-                              'processor_id' : [nodeId] * len(timestamps),
-                              'subprocessor_id' : [0] * len(timestamps),
-                              'state' : (np.sign(dataset['data'][()]) + 1 / 2).astype('int')})
-        
-        f.close()
+        self._events = pd.concat(events)
+        self._events.sort_values(by='timestamp')
         
     def __str__(self):
         """Returns a string with information about the Recording"""
@@ -176,11 +185,11 @@ class NwbRecording(Recording):
                     
             f = h5.File(file, 'r')
             
-            for recording_index, r in enumerate(f['acquisition']['timeseries'].keys()):
+            #for recording_index, r in enumerate(f['acquisition']['timeseries'].keys()):
                 
-                recordings.append(NwbRecording(directory,
-                                                     experiment_index,
-                                                     recording_index))
+            recordings.append(NwbRecording(directory,
+                                                    experiment_index,
+                                                    0))
             f.close()
             
         return recordings

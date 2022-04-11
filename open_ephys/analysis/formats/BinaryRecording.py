@@ -108,7 +108,9 @@ class BinaryRecording(Recording):
         events_directories = glob.glob(search_string)
         
         df = []
-        streamIdx = 0
+        
+        streamIdx = -1
+        
         for events_directory in events_directories:
             
             node_name = os.path.basename(os.path.dirname(events_directory)).split('.')
@@ -119,16 +121,13 @@ class BinaryRecording(Recording):
             streamIdx += 1
             
             channels = np.load(os.path.join(events_directory, 'states.npy'))
-            samples = np.load(os.path.join(events_directory, 'samples.npy'))
-            channel_states = np.load(os.path.join(events_directory, 'states.npy'))
-            timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
+            timestamps = np.load(os.path.join(events_directory, 'synchronized_timestamps.npy'))
         
-            df.append(pd.DataFrame(data = {'channel' : channels,
-                              'sample' : samples,
+            df.append(pd.DataFrame(data = {'line' : np.abs(channels),
                               'timestamp' : timestamps,
                               'processor_id' : [nodeId] * len(channels),
-                              'subprocessor_id' : [streamIdx] * len(channels),
-                              'state' : (channel_states > 0).astype('int')}))
+                              'stream_index' : [streamIdx] * len(channels),
+                              'state' : (channels > 0).astype('int')}))
             
         
             

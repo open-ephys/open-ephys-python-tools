@@ -25,7 +25,7 @@ SOFTWARE.
 import os
 import glob
 
-from open_ephys.analysis.formats import KwikRecording, OpenEphysRecording, BinaryRecording, NwbRecording
+from open_ephys.analysis.formats import OpenEphysRecording, BinaryRecording, NwbRecording
 
 class RecordNode:
     
@@ -65,7 +65,6 @@ class RecordNode:
         """
         
         self.formats = {'nwb': NwbRecording,
-                        'kwik': KwikRecording,
                         'binary': BinaryRecording,
                         'open-ephys': OpenEphysRecording}
         

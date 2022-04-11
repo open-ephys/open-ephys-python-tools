@@ -35,6 +35,7 @@ class Recording(ABC):
         - continuous
         - events
         - spikes
+        - messages
     
     which load the underlying data upon access.
     
@@ -42,19 +43,32 @@ class Recording(ABC):
         - samples (memory-mapped array of dimensions samples x channels)
         - timestamps (array of length samples)
         - metadata (contains information about the data source)
+            - channel_names
+            - bit_volts
+            - source_node_id
+            - stream_name
         
     spikes is a list of spike sources
         - waveforms (spikes x channels x samples)
-        - timestamps (one per spikes)
+        - timestamps (one per sample)
         - electrodes (index of electrode from which each spike originated)
         - metadata (contains information about each electrode)
+            - electrode_names
+            - bit_volts
+            - source_node_id
+            - stream_name
         
-    Event data is stored in a pandas DataFrame containing five columns:
+    evets is a pandas DataFrame containing six columns:
         - timestamp
-        - channel
-        - processor_id
-        - subprocessor_id
+        - sample_index
+        - line
         - state (1 or 0)
+        - processor_id
+        - stream_index
+
+    messages is a pandas DataFrame containing two columns:
+        - timestamp
+        - message
     
     """
     
@@ -104,6 +118,7 @@ class Recording(ABC):
         self._continuous = None
         self._events = None
         self._spikes = None
+        self._messages = None
         
         self.sync_lines = []
         
@@ -117,6 +132,10 @@ class Recording(ABC):
     
     @abstractmethod
     def load_continuous(self):
+        pass
+
+    @abstractmethod
+    def load_messages(self):
         pass
     
     @abstractmethod
