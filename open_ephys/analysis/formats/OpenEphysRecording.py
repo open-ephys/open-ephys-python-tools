@@ -40,6 +40,7 @@ class OpenEphysRecording(Recording):
         
         def __init__(self, files, recording_index):
             
+            self.name = files[0].strip().split('_')[-2]
             self.timestamps, _, _ = load(files[0], recording_index)
             self.global_timestamps = None
             
@@ -85,6 +86,11 @@ class OpenEphysRecording(Recording):
             self.timestamps = self.timestamps[order]
             self.waveforms = self.waveforms[order,:,:]
             self.electrodes = self.electrodes[order]
+
+            self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
+                    'timestamp' : self.timestamps,
+                    'electrode' : self.electrodes,
+                    'cluster' : self.clusters})
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
@@ -114,6 +120,9 @@ class OpenEphysRecording(Recording):
             self._continuous.append(self.Continuous(files_for_stream, self.recording_index))
         
     def load_spikes(self):
+
+        for file_type in ('single electrode','stereotrode', 'tetrode'):
+            print("***Found {} {} ".format(len(self.find_spikes_files(file_type)), file_type))
         
         self._spikes = [self.Spikes(self.find_spikes_files(file_type), 
                                     self.recording_index)
@@ -145,7 +154,10 @@ class OpenEphysRecording(Recording):
 
     def load_messages(self):
         
-        messages_file = os.path.join(self.directory, 'messages' + experiment_id + '.events')
+        if len(self.experiment_id) == 0:
+            messages_file = os.path.join(self.directory, 'messages' + '.events')
+        else:
+            messages_file = os.path.join(self.directory, 'messages_' + str(self.experiment_id) + '.events')
 
         df = pd.read_csv(messages_file, header=None, names=['timestamp', 'message'])
         splits = np.where(df.message == ' Software Time (milliseconds since midnight Jan 1st 1970 UTC)')[0]
@@ -175,16 +187,19 @@ class OpenEphysRecording(Recording):
 
     def find_spikes_files(self, file_type):
     
-        search_string = {'single electrode' : 'SE',
-                         'stereotrode': 'ST',
-                         'tetrode': 'TT'}    
+        search_string = {'single electrode' : 'Electrode',
+                         'stereotrode': 'Stereotrode',
+                         'tetrode': 'Tetrode'}    
     
         if self.experiment_index == 0:
+            print((os.path.join(self.directory, 
+                                       search_string[file_type] + '*spikes')))
             f = glob.glob(os.path.join(self.directory, 
                                        search_string[file_type] + '*spikes'))
+            print("Got spike files: {}".format(f))
             f.sort()
             return [name for name in f 
-                    if (os.path.basename(name).find('_') < 0)]
+                    if True]#(os.path.basename(name).find('_') < 0)]
         else:
             f = glob.glob(os.path.join(self.directory, search_string[file_type] + 
                                                        '*' + self.experiment_id + '*spikes'))
