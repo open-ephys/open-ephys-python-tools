@@ -89,6 +89,12 @@ class Recording(ABC):
         if self._spikes is None:
             self.load_spikes()
         return self._spikes
+
+    @property
+    def messages(self):
+        if self._messages is None:
+            self.load_messages()
+        return self._messages
     
     @property
     def format(self):

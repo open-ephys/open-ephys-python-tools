@@ -36,15 +36,23 @@ class BinaryRecording(Recording):
         
         def __init__(self, info, base_directory):
         
-            directory = os.path.join(base_directory, 'spikes', info['folder_name'])
+            directory = os.path.join(base_directory, 'spikes', info['folder'])
             
-            self.timestamps = np.load(os.path.join(directory, 'spike_times.npy'))
-            self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy')) - 1
+            self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
+            self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+            self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
         
-            self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy'))
+            self.waveforms = np.load(os.path.join(directory, 'waveforms.npy'))
             
             if self.waveforms.ndim == 2:
                 self.waveforms = np.expand_dims(self.waveforms, 1)
+
+            self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
+
+            self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
+                    'timestamp' : self.timestamps,
+                    'electrode' : self.electrodes,
+                    'cluster' : self.clusters})
     
     class Continuous:
         
@@ -58,11 +66,11 @@ class BinaryRecording(Recording):
             self.metadata['sample_rate'] = info['sample_rate']
             self.metadata['num_channels'] = info['num_channels']
             self.metadata['processor_id'] = info['source_processor_id']
-            self.metadata['subprocessor_id'] = info['source_processor_sub_idx']
+            self.metadata['stream_name'] = info['stream_name']
             self.metadata['names'] = [ch['channel_name'] for ch in info['channels']]
             
+            self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
             self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
-            self.synchronized = np.load(os.path.join(directory, 'synchronized_timestamps.npy'))
 
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
@@ -121,9 +129,11 @@ class BinaryRecording(Recording):
             streamIdx += 1
             
             channels = np.load(os.path.join(events_directory, 'states.npy'))
-            timestamps = np.load(os.path.join(events_directory, 'synchronized_timestamps.npy'))
+            sample_numbers = np.load(os.path.join(events_directory, 'sample_numbers.npy'))
+            timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
         
             df.append(pd.DataFrame(data = {'line' : np.abs(channels),
+                              'sample_number' : sample_numbers,
                               'timestamp' : timestamps,
                               'processor_id' : [nodeId] * len(channels),
                               'stream_index' : [streamIdx] * len(channels),
@@ -133,12 +143,38 @@ class BinaryRecording(Recording):
             
         if len(df) > 0:
                                                
-            self._events = pd.concat(df).sort_values(by='timestamp', ignore_index=True)
+            self._events = pd.concat(df).sort_values(by=['timestamp', 'stream_index'], ignore_index=True)
 
         else:
             
             self._events = None
     
+    def load_messages(self):
+        search_string = os.path.join(self.directory,
+                            'events',
+                            'MessageCenter')
+        msg_center_dir = glob.glob(search_string)
+
+        df = []
+
+        if len(msg_center_dir) == 1:
+
+            msg_center_dir = msg_center_dir[0]
+            sample_numbers = np.load(os.path.join(msg_center_dir, 'sample_numbers.npy'))
+            timestamps = np.load(os.path.join(msg_center_dir, 'timestamps.npy'))
+            text = np.load(os.path.join(msg_center_dir, 'text.npy'))
+
+            df = pd.DataFrame(data = { 'sample_number' : sample_numbers,
+                    'timestamp' : timestamps,
+                    'message' : text} )
+
+        if len(df) > 0:
+
+            self._messages = df;
+
+        else:
+
+            self._messages = None
 
     def __str__(self):
         """Returns a string with information about the Recording"""
