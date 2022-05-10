@@ -271,13 +271,13 @@ def load_spikes(filename, recording_number):
     f = open(filename,'rb')
     numSpikes = (os.fstat(f.fileno()).st_size - NUM_HEADER_BYTES) // SPIKE_RECORD_SIZE
 
-    timestamps = np.zeros((numSpikes,), dtype='<i8')
+    sample_numbers = np.zeros((numSpikes,), dtype='<i8')
     
     f.seek(NUM_HEADER_BYTES + 1)
     
-    for i in range(len(timestamps)):
+    for i in range(len(sample_numbers)):
         
-        timestamps[i] = np.fromfile(f, np.dtype('<i8'), 1)
+        sample_numbers[i] = np.fromfile(f, np.dtype('<i8'), 1)
         f.seek(NUM_HEADER_BYTES + 1 + SPIKE_RECORD_SIZE * i)
     
 
@@ -293,5 +293,5 @@ def load_spikes(filename, recording_number):
     waveforms /= 20000 # gain 
     waveforms *= 1000
     
-    return timestamps, waveforms, header
+    return sample_numbers, waveforms, header
 

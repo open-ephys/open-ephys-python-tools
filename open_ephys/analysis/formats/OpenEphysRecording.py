@@ -87,10 +87,8 @@ class OpenEphysRecording(Recording):
             self.waveforms = self.waveforms[order,:,:]
             self.electrodes = self.electrodes[order]
 
-            self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
-                    'timestamp' : self.timestamps,
-                    'electrode' : self.electrodes,
-                    'cluster' : self.clusters})
+            self.summary = pd.DataFrame(data = {'timestamp' : self.timestamps,
+                    'electrode' : self.electrodes})
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
