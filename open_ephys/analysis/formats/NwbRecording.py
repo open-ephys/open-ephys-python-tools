@@ -36,40 +36,31 @@ class NwbRecording(Recording):
     
     class Spikes:
         
-        def __init__(self, dataset):
+        def __init__(self, nwb, dataset):
             
-            timestamps = []
-            waveforms = []
-            electrodes = []
             
             self.metadata = {}
-            
-            self.metadata['names'] = list(dataset.keys())
-            
-            for i, electrode in enumerate(dataset.keys()):
-                   
-                if dataset[electrode]['data'][()].shape[1] == channel_count:
-            
-                    timestamps.append(dataset[electrode]['timestamps'][()])
-                    waveforms.append(dataset[electrode]['data'][()])
-                    electrodes.append(np.array([i] * len(timestamps[-1])))
+            self.metadata['name'] = dataset
+            self.metadata['channel_count'] = nwb['acquisition'][dataset]['data'][()].shape[1]
 
-            self.timestamps = np.concatenate(timestamps)
-            self.waveforms = np.concatenate(waveforms, axis=0)
-            self.electrodes = np.concatenate(electrodes)
-            
+            self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
+            self.waveforms = nwb['acquisition'][dataset]['data'][()]
+            self.electrodes = nwb['acquisition'][dataset]['electrodes'][()]
+
             order = np.argsort(self.timestamps)
             
             self.timestamps = self.timestamps[order]
             self.waveforms = self.waveforms[order,:,:]
-            self.electrodes = self.electrodes[order]
+            #self.electrodes = self.electrodes[order,:] #TOFIX
     
     class Continuous:
         
-        def __init__(self, dataset):
+        def __init__(self, nwb, dataset):
+
+            self.name = dataset
             
-            self.samples = self.nwb['acquisition'][dataset]['data'][()]
-            self.timestamps = self.nwb['acquisition'][dataset]['timestamps'][()]
+            self.samples = nwb['acquisition'][dataset]['data'][()]
+            self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
             
             self.metadata = {}
             self.metadata['sample_rate'] = 1/np.mean(np.diff(self.timestamps))
@@ -89,19 +80,16 @@ class NwbRecording(Recording):
     def load_continuous(self):
         
         datasets = list(self.nwb['acquisition'].keys())
-        
-        self._continuous = [self.Continuous(dataset) for dataset in datasets
-                            if (dataset[:8] != 'messages' and
-                                dataset[:13] != 'sync_messages' and
-                                dataset[-4:] != '.TTL' and
-                                dataset[-7:] != '.spikes')]
+
+        self._continuous = [self.Continuous(self.nwb, dataset) for dataset in datasets
+                            if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == b'ElectricalSeries']
     
     def load_spikes(self):
         
         datasets = list(self.nwb['acquisition'].keys())   
 
-        self._spikes = [self.Spikes(dataset) for dataset in datasets
-                        if (dataset[-7:] == '.spikes')]
+        self._spikes = [self.Spikes(self.nwb, dataset) for dataset in datasets
+                         if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == b'SpikeEventSeries']
 
     def load_events(self):
          
@@ -135,6 +123,9 @@ class NwbRecording(Recording):
         
         self._events = pd.concat(events)
         self._events.sort_values(by='timestamp')
+
+    def load_messages(self):
+        pass
         
     def __str__(self):
         """Returns a string with information about the Recording"""
