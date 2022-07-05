@@ -51,7 +51,7 @@ class NwbRecording(Recording):
             
             self.timestamps = self.timestamps[order]
             self.waveforms = self.waveforms[order,:,:]
-            #self.electrodes = self.electrodes[order,:] #TOFIX
+            self.electrodes = self.electrodes[order]
     
     class Continuous:
         
@@ -82,14 +82,14 @@ class NwbRecording(Recording):
         datasets = list(self.nwb['acquisition'].keys())
 
         self._continuous = [self.Continuous(self.nwb, dataset) for dataset in datasets
-                            if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == b'ElectricalSeries']
+                            if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == 'ElectricalSeries']
     
     def load_spikes(self):
         
         datasets = list(self.nwb['acquisition'].keys())   
 
         self._spikes = [self.Spikes(self.nwb, dataset) for dataset in datasets
-                         if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == b'SpikeEventSeries']
+                         if self.nwb['acquisition'][dataset].attrs['neurodata_type'] == 'SpikeEventSeries']
 
     def load_events(self):
          
