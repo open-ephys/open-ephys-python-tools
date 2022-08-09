@@ -20,4 +20,5 @@ setup(name='open-ephys-python-tools',
               'numpy',
               'pandas', 
               'h5py',
-              'zmq'])
+              'zmq',
+              'requests'])
