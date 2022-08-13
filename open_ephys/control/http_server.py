@@ -215,6 +215,25 @@ class OpenEphysHTTPServer:
         else:
             return "Invalid key"
 
+
+    def set_parent_dir(self, path):
+
+        """
+        Set the parent directory.
+
+        Parameters
+        ----------
+        path : String
+            The path to the parent directory.
+        """
+
+        url = self.address + '/api/recording'
+        payload = {
+            'parent_directory' : path
+        }
+        data = self.send(url, payload)
+        return data
+
     def set_prepend_text(self, text):
 
         """
@@ -241,7 +260,7 @@ class OpenEphysHTTPServer:
         Parameters
         ----------
         text : String
-            The text to base.
+            The text to base name of the recording directory (see GUI docs).
         """
 
         url = self.address + '/api/recording'
