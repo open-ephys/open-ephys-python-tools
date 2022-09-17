@@ -8,11 +8,11 @@ This repository is meant to centralize and standardize Python-specific tools for
 
 It consists of three modules:
 
-1. `analysis` - loads data in every format supported by the GUI, using a common interface
+1. [`analysis`](open_ephys/analysis) - loads data in every format supported by the GUI, using a common interface
 
-2. `control` - allows a Python process to control the GUI, locally or over a network connection
+2. [`control`](open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
 
-3. `streaming` - receives data from the GUI for real-time analysis and visualization in Python
+3. [`streaming`](open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization in Python
 
 ## Installation
 
@@ -41,7 +41,7 @@ We will eventually add `open-ephys-python-tools` to the [Python Package Index](h
 
 ## Usage
 
-### analysis
+### [analysis](open_ephys/analysis)
 
 ```python
 
@@ -56,9 +56,8 @@ If the directory contains data from one more Record Nodes (GUI version 0.5+), th
 
 If your directory just contains data (any GUI version), individual recordings can be accessed via `session.recordings`. The format of the recordings will be detected automatically as either 
 [Binary](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
-[Open Ephys](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
-[NWB 1.0](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html), or 
-[KWIK](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/KWIK-format.html).
+[Open Ephys](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Open-Ephys-format.html), or
+[NWB 2.0](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html).
 
 Each `recording` object has the following fields:
 
@@ -68,7 +67,7 @@ Each `recording` object has the following fields:
 
 More details about `continuous`, `spikes`, and `events` objects can be found in the [analysis module README file](open_ephys/analysis/README.md).
 
-### control
+### [control](open_ephys/control)
 
 First, launch an instance of Open Ephys, and make sure a [Network Events](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Network-Events.html) plugin is in the signal chain.
 
@@ -88,7 +87,7 @@ gui.acquire(10) # acquire data for 10 seconds
 
 More details about available commands can be found in the [control module README file](open_ephys/control/README.md).
 
-### streaming
+### [streaming](open_ephys/streaming)
 
 First, launch an instance of Open Ephys, and make sure a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin is in the signal chain.
 
