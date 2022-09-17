@@ -16,11 +16,13 @@ It consists of three modules:
 
 ## Installation
 
-From inside a Python virtual environment (`conda` or otherwise), run the following command:
+The code in this branch is intended for use with Open Ephys GUI version `0.6.x` and higher. 
+
+Inside a Python virtual environment (`conda` or otherwise), run the following command:
 
 ```bash
 
-$ pip install git+https://github.com/open-ephys/open-ephys-python-tools
+$ pip install https://github.com/open-ephys/open-ephys-python-tools/archive/0.6.0.zip
 
 ```
 
@@ -29,9 +31,12 @@ Alternatively, if you've cloned the repository locally, you can run the followin
 
 ```bash
 
-$ pip install .
+$ pip install -e .
 
 ```
+
+*Note:* The `-e` argument links the package in the original location (rather than by copying), so any edits to the source code can be used immediately. This is optional but can be extremely useful for debugging.
+
 We will eventually add `open-ephys-python-tools` to the [Python Package Index](https://pypi.org/), but we are waiting until the code base is more stable.
 
 ## Usage
@@ -71,13 +76,13 @@ Then, from your Python process:
 
 ```python
 
-from open_ephys.control import NetworkControl
+from open_ephys.control import OpenEphysHTTPServer
 
-url = '10.128.50.10' # IP address of the computer running Open Ephys
+address = '10.128.50.10' # IP address of the computer running Open Ephys
 
-gui = NetworkControl(url)
+gui = OpenEphysHTTPServer(address)
 
-gui.start # start acquisition
+gui.acquire(10) # acquire data for 10 seconds
 
 ```
 
@@ -93,9 +98,9 @@ Then, from your Python process:
 
 from open_ephys.streaming import EventListener
 
-url = '10.128.50.10' # IP address of the computer running Open Ephys
+address = '10.128.50.10' # IP address of the computer running Open Ephys
 
-stream = EventListener(url)
+stream = EventListener(address)
 
 ```
 

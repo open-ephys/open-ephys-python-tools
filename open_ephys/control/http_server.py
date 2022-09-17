@@ -45,32 +45,27 @@ class OpenEphysHTTPServer:
         - get/set processor parameters 
         - start/stop acquisition
         - start/stop recording
-        - save and close the GUI
+        - close the GUI
     
     To use, first create a OpenEphysHTTPServer object:
         
-        >> gui = OpenEphysHTTPServer()
+        >> from open_ephys.control import OpenEphysHTTPServer
+        >> gui = OpenEphysHTTPServer() # defaults to localhost, optionally specify an IP address
         
     Then, change or query the GUI's state via object properties and methods:
+
+        >> gui.load('/Users/Ephys/Documents/config.xml') # Load a signal chain
         
-        >> gui.acquire(10) # Acquire data for 10 seconds 
+        >> gui.acquire(10) # Acquire data for 10 seconds and then stop
         
-        >> gui.status()
-        Response: { "mode" : "ACQUIRE" }
+        >> gui.record(3600) # Record data for 1 hour and return to the previous state
         
-        >> gui.record(3600) # Record data for 1 hour
-        
-        >> gui.status()
-        Response: { "mode" : "RECORD" }
-        
-        >> gui.idle() # Stop acquisition and recording
-        
-        >> gui.status()
-        Response: { "mode" : "IDLE" }
+        >> gui.status() # Get current status ('IDLE', 'ACQUIRE', or 'RECORD')
+        'IDLE'
     
     """
 
-    def __init__(self, address='http://127.0.0.1:37497'):
+    def __init__(self, address='127.0.0.1'):
         
         """ 
         Construct an OpenEphysHTTPServer object
@@ -78,30 +73,36 @@ class OpenEphysHTTPServer:
         Parameters
         ----------
         address : String
-            Defines the base URL address.
+            Defines the base URL address
+            Defaults to 127.0.0.1 (localhost)
         """
         
-        self.address = address
+        self.address = 'http://' + address + ':37497'
 
-    def send(self, url, payload=None):
+    def send(self, endpoint, payload=None):
 
         """
         Send a request to the server.
 
-        Parameterss
+        Parameters
         ----------
-        url : String
-            The URL to send the request to.
+        endpoint : String
+            The API endpoint for the request.
+            Must begin with "/api/"
         payload : Dictionary
             The payload to send with the request.
+            
+            If a payload is specified, a PUT request
+            will be used; otherwise it will be a GET request.
         """
 
         try: 
 
             if payload is None:
-                resp = requests.get(url)
+                resp = requests.get(self.address + endpoint)
             else:
-                resp = requests.put(url, data = json.dumps(payload))
+                resp = requests.put(self.address + endpoint, 
+                                    data = json.dumps(payload))
 
         except requests.exceptions.Timeout:
             # Maybe set up for a retry, or continue in a retry loop
@@ -110,28 +111,27 @@ class OpenEphysHTTPServer:
             # Tell the user their URL was bad and try a different one
             print("Bad URL")
         except requests.exceptions.RequestException as e:
-            # OpenEphys server needs to be enabled
-            print("OpenEphys HttpServer likely not enabled")
-            raise SystemExit(e)
+            # Open Ephys server needs to be enabled
+            print("Open Ephys HTTP Server likely not enabled")
 
         return resp.json()
 
-    def load(self, cfg_path):
+    def load(self, config_path):
 
         """
         Load a configuration file.
 
         Parameters
         ----------
-        cfg_path : String
+        config_path : String
             The path to the configuration file.
         """
 
         payload = { 
-            'path' : cfg_path
+            'path' : config_path
         }
-        url = self.address + '/api/load'
-        res = self.send(url, payload)
+
+        res = self.send('/api/load', payload)
         time.sleep(1)
         return res
 
@@ -146,52 +146,54 @@ class OpenEphysHTTPServer:
             Filter the list by processor name.
         """
 
-        url = self.address + '/api/processors'
-        data = self.send(url)
+        data = self.send('/api/processors')
         if filter_by_name == "":
             return data
         else:
             return [x for x in data['processors'] if x['name'] == filter_by_name]
 
-    def get_param(self, pid, sid):
+    def get_param(self, processor_id, stream_index):
 
         """
         Get parameters for a stream.
 
         Parameters
         ----------
-        pid : Integer
-            The processor ID.
-        sid : Integer
-            The stream ID.
+        processor_id : Integer
+            The 3-digit processor ID (e.g. 101)
+        stream_index : Integer
+            The index of the stream (e.g. 0).
         """
 
-        url = self.address + '/api/processors/' + str(pid) + '/streams/' + str(sid) + '/parameters'
-        data = self.send(url)
+        endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters'
+        data = self.send(endpoint)
+
         return data
 
-    def set_param(self, pid, sid, param_name, val):
+    def set_param(self, processor_id, stream_index, param_name, value):
 
         """
-        Set parameters for a stream.
+        Update a parameter value
 
         Parameters
         ----------
-        pid : Integer
-            The processor ID.
-        sid : Integer
-            The stream ID.
+        processor_id : Integer
+            The 3-digit processor ID (e.g. 101)
+        stream_index : Integer
+            The index of the stream (e.g. 0)
         param_name : String
-            The parameter name.
-        val : Any
+            The parameter name (e.g. low_cut)
+        value : Any
             The parameter value (must match the parameter type).
+            Hint: Float parameters must be sent with a decimal 
+                included (e.g. 1000.0 instead of 1000)
         """
 
-        url = self.address + '/api/processors/' + str(pid) + '/streams/' + str(sid) + '/parameters/' + param_name
+        endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters/' + param_name
         payload = {
-            'value' : val
+            'value' : value
         }
-        data = self.send(url, payload)
+        data = self.send(endpoint, payload)
         return data
 
     # Get current recording information
@@ -206,8 +208,7 @@ class OpenEphysHTTPServer:
             The key to get.
         """
 
-        url = self.address + '/api/recording'
-        data = self.send(url)
+        data = self.send('/api/recording')
         if key == "":
             return data
         elif key in data:
@@ -227,11 +228,10 @@ class OpenEphysHTTPServer:
             The path to the parent directory.
         """
 
-        url = self.address + '/api/recording'
         payload = {
             'parent_directory' : path
         }
-        data = self.send(url, payload)
+        data = self.send('/api/recording', payload)
         return data
 
     def set_prepend_text(self, text):
@@ -245,11 +245,10 @@ class OpenEphysHTTPServer:
             The text to prepend.
         """
 
-        url = self.address + '/api/recording'
         payload = {
             'prepend_text' : text
         }
-        data = self.send(url, payload)
+        data = self.send('/api/recording', payload)
         return data
 
     def set_base_text(self, text):
@@ -263,11 +262,10 @@ class OpenEphysHTTPServer:
             The text to base name of the recording directory (see GUI docs).
         """
 
-        url = self.address + '/api/recording'
         payload = {
             'base_text' : text
         }
-        data = self.send(url, payload)
+        data = self.send('/api/recording', payload)
         return data
 
     def set_append_text(self, text):
@@ -281,11 +279,10 @@ class OpenEphysHTTPServer:
             The text to append.
         """
 
-        url = self.address + '/api/recording'
         payload = {
             'append_text' : text
         }
-        data = self.send(url, payload)
+        data = self.send('/api/recording', payload)
         return data
 
     def set_file_path(self, node_id, file_path):
@@ -301,11 +298,11 @@ class OpenEphysHTTPServer:
             The file path.
         """
 
-        url = self.address + '/api/processors/' + str(node_id) + '/config'
+        endpoint = '/api/processors/' + str(node_id) + '/config'
         payload ={ 
             'text' : file_path
         }
-        data = self.send(url, payload)
+        data = self.send(endpoint, payload)
         return data
 
     def set_file_index(self, node_id, file_index):
@@ -321,11 +318,11 @@ class OpenEphysHTTPServer:
             The file index.
         """
 
-        url = self.address + '/api/processors/' + str(node_id) + '/config'
+        endpoint = '/api/processors/' + str(node_id) + '/config'
         payload ={ 
             'text' : file_index
         }
-        data = self.send(url, payload)
+        data = self.send(endpoint, payload)
         return data
 
     def set_record_engine(self, node_id, engine):
@@ -341,11 +338,11 @@ class OpenEphysHTTPServer:
                 The record engine index.
         """
 
-        url = self.address + '/api/processors/' + str(node_id) + '/config'
+        endpoint = '/api/processors/' + str(node_id) + '/config'
         payload = { 
             'text' : engine
         }
-        data = self.send(url, payload)
+        data = self.send(endpoint, payload)
         return data
 
     def set_record_path(self, node_id, directory):
@@ -361,31 +358,55 @@ class OpenEphysHTTPServer:
             The record path.
         """
 
-        url = self.address + '/api/recording/' + str(node_id)
         payload ={ 
             'parent_directory' : directory
         }
-        data = self.send(url, payload)
+        data = self.send('/api/recording/' + str(node_id), payload)
         return data
+
+    def status(self):
+
+        """
+        Returns the current status of the GUI (IDLE, ACQUIRE, or RECORD)
+
+        """
+        return self.send('/api/status')['mode']
 
     def acquire(self, duration=0):
 
         """
-        Acquire data.
+        Start acquisition.
 
         Parameters
         ----------
-        duration : Integer
-            The duration in seconds.
+        duration : Integer (optional)
+            The acquisition duration in seconds. If given, the
+            GUI will acquire data for the specified interval
+            and then stop.
+
+            By default, acquisition will continue until it
+            is stopped by another command.
+
+        Returns
+        -------
+        The current status of the GUI after the command returns.
+
         """
 
-        url = self.address + '/api/status'
         payload = { 
             'mode' : 'ACQUIRE',
         }
-        data = self.send(url, payload)
-        if duration: time.sleep(duration)
-        return data
+        
+        data = self.send('/api/status', payload)
+        
+        if duration: 
+            time.sleep(duration)
+            payload = { 
+                'mode' : 'IDLE',
+            }
+            data = self.send('/api/status', payload)
+        
+        return data['mode']
 
     def record(self, duration=0):
 
@@ -394,36 +415,61 @@ class OpenEphysHTTPServer:
 
         Parameters
         ----------
-        duration : Integer
-            The duration in seconds.
+        duration : Integer (optional)
+            The acquisition duration in seconds. If given, the
+            GUI will record data for the specified interval
+            and then return to its previous state.
+
+            By default, recording will continue until it
+            is stopped by another command.
         """
 
-        url = self.address + '/api/status'
+        previous_mode = self.status()
+
         payload = { 
             'mode' : 'RECORD',
         }
-        data = self.send(url, payload)
-        if duration: time.sleep(duration)
-        return data
+        data = self.send('/api/status', payload)
+        
+        if duration: 
+            time.sleep(duration)
+            payload = { 
+                'mode' : previous_mode,
+            }
+            data = self.send('/api/status', payload)
+        
+        return data['mode']
 
     def idle(self, duration=0):
 
         """
-        Stop acquiring/recording data.
+        Stop acquiring or recording data. 
 
         Parameters
         ----------
         duration : Integer
-            The duration in seconds.
+            The duration in seconds. If given, the
+            GUI will idle for the specified interval
+            and then return to its previous state.
+
+            By default, this command will stop
+            acquisition/recording and return immediately.
         """
 
-        url = self.address + '/api/status'
+        previous_mode = self.status()
+
         payload = { 
             'mode' : 'IDLE',
         }
-        data = self.send(url, payload)
-        if duration: time.sleep(duration)
-        return data
+        data = self.send('/api/status', payload)
+        if duration: 
+            time.sleep(duration)
+            payload = { 
+                'mode' : previous_mode,
+            }
+            data = self.send('/api/status', payload)
+        
+        return data['mode']
 
     def quit(self):
 
@@ -431,11 +477,11 @@ class OpenEphysHTTPServer:
         Quit the GUI.
         """
 
-        url = self.address + '/api/window'
         payload = { 
             'command' : 'quit' 
         }
-        data = self.send(url, payload)
+        data = self.send('/api/window', payload)
+
         return data
 
     def get_latest_recordings(self, directory, count=1):
