@@ -12,7 +12,7 @@ It consists of three modules:
 
 2. [`control`](open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
 
-3. [`streaming`](open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization in Python
+3. [`streaming`](open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization
 
 ## Installation
 
@@ -107,12 +107,12 @@ Next, define a callback function to handle each incoming event:
 
 ```python
 
-def ttl_callback(event_info):
+def ttl_callback(info):
 
-    print("Event occurred on channel " 
-          + info['channel'] 
+    print("Event occurred on TTL line " 
+          + info['line'] 
           + " at " 
-          + info['timing']['timestamp'] / info['timing']['sampleRate'] 
+          + info['sample_number'] / info['sample_rate'] 
           + " seconds.")
 
 ```

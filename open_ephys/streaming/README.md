@@ -2,7 +2,7 @@
 
 This module makes it possible to listen to events from the [Open Ephys GUI](https://open-ephys.org/gui) via a Python process, either running locally or over a network.
 
-Your GUI's signal chain must include a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin in order for this module to work. The Event Broadcaster must be configured to send events in "Header/JSON" format.
+The GUI's signal chain must include a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin in order for this module to work. The Event Broadcaster must be configured to send events in **JSON** format.
 
 ## Usage
 
@@ -14,7 +14,7 @@ First, load the module:
 from open_ephys.streaming import EventListener
 ```
 
-To listen for events coming from an Open Ephys instance running on the same machine, simply enter:
+To listen for events coming from an Open Ephys GUI instance running on the same machine, create an `EventListener` with no input arguments:
 
 ```python
 stream = EventListener()
@@ -33,8 +33,8 @@ Whenever the `EventListener` receives an event, it checks if it's a TTL event or
 
 ```python
 def ttl_callback(info):
-    if info['channel'] == 2 and info['data'] == True:
-        print('Rising event on channel 2')
+    if info['line'] == 2 and info['state']:
+        print('Rising event on line 2')
 
 ```
 
@@ -42,40 +42,36 @@ The TTL callback should be designed to handle a Python dictionary with the follo
 
 ```
 {
-  'channel': int, 
-  'type': 'ttl', 
-  'data': bool, 
-  'timing': 
-  {
-    'sampleRate': int, 
-    'timestamp': int
-  }, 
-  'identifier': str, 
-  'name': str, 
-  'metaData': { dict }
+   "event_type" : "ttl",
+   "stream" : str,
+   "source_node" : int,
+   "sample_rate" : float,
+   "channel_name" : str,
+   "sample_number" : int,
+   "line" : int,
+   "state" : int
 }
+
 ```
 
 The spike callback should be designed to handle a Python dictionary with the following contents:
 
 ```
 {
-  'type': 'spike', 
-  'sortedID': int, 
-  'numChannels': int, 
-  'threshold': list, 
-  'timing': 
-  {
-    'sampleRate': int, 
-    'timestamp': int
-  }, 
-  'identifier': string, 
-  'name': string, 
-  'metaData': 
-  {
-    'Color': list
-  }
+   "event_type" : "spike",
+   "stream" : str,
+   "source_node" : int,
+   "electrode" : str,
+   "num_channels" : int,
+   "sample_rate" : float,
+   "sample_number" : int,
+   "sorted_id" : int,
+   "amp1" : float,
+   "amp2" : float,
+   "amp3" : float,
+   "amp4" : float
 }
+
 ```
 
 ### Starting and stopping event listening
@@ -88,3 +84,5 @@ stream.start(ttl_callback=ttl_callback,
 ```
 
 To stop listening, press `ctrl-C`.
+
+**Note:** If you start streaming without defining any callbacks, it will print the contents of each event.

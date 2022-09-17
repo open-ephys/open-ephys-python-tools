@@ -98,14 +98,12 @@ class EventListener:
         """
         
         self.url = "tcp://%s:%d" % (ip_address, port)
-        
+
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
         self.socket.connect(self.url)
 
-        for eventType in (b'ttl', b'spike'):
-            self.socket.setsockopt(zmq.SUBSCRIBE, eventType)
-
+        print("Initialized EventListener at " + self.url)
 
 
     def start(self, 
@@ -130,9 +128,13 @@ class EventListener:
             try:
                 parts = self.socket.recv_multipart()
 
+                print(len(parts))
+
                 info = json.loads(parts[1].decode('utf-8'))
 
-                if info['type'] == 'spike':
+                print(info)
+
+                if info['event_type'] == 'spike':
                     spike_callback(info)
                 else:
                     ttl_callback(info)
