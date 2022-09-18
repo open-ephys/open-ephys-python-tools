@@ -41,6 +41,7 @@ class Recording(ABC):
     
     continuous is a list of data streams
         - samples (memory-mapped array of dimensions samples x channels)
+        - sample_numbers (array of length samples)
         - timestamps (array of length samples)
         - metadata (contains information about the data source)
             - channel_names
@@ -50,6 +51,7 @@ class Recording(ABC):
         
     spikes is a list of spike sources
         - waveforms (spikes x channels x samples)
+        - sample_numbers (one per sample)
         - timestamps (one per sample)
         - electrodes (index of electrode from which each spike originated)
         - metadata (contains information about each electrode)
@@ -58,16 +60,17 @@ class Recording(ABC):
             - source_node_id
             - stream_name
         
-    evets is a pandas DataFrame containing six columns:
+    events is a pandas DataFrame containing six columns:
         - timestamp
-        - sample_index
+        - sample_number
         - line
         - state (1 or 0)
         - processor_id
         - stream_index
 
-    messages is a pandas DataFrame containing two columns:
+    messages is a pandas DataFrame containing three columns:
         - timestamp
+        - sample_number
         - message
     
     """
@@ -159,13 +162,13 @@ class Recording(ABC):
         """Returns a string with information about the Recording"""
         pass
     
-    def add_sync_channel(self, channel, processor_id, subprocessor_id=0, main=False):
+    def add_sync_line(self, line, processor_id, stream_index=0, main=False):
         """Specifies an event channel to use for timestamp synchronization. Each 
-        sync channel in a recording should receive its input from the same 
+        sync line in a recording should receive its input from the same 
         physical digital input line.
         
         For synchronization to work, there must be one (and only one) 'main' 
-        sync channel, to which all timestamps will be aligned.
+        sync line, to which all timestamps will be aligned.
         
         Parameters
         ----------
@@ -173,11 +176,11 @@ class Recording(ABC):
             event channel number
         processor_id : int
             ID for the processor receiving sync events
-        subprocessor_id : int
-            index of the subprocessor receiving sync events
+        stream_index : int
+            index of the stream receiving sync events
             default = 0
         main : bool
-            if True, this processor's timestamps will be treated as the 
+            if True, this stream's timestamps will be treated as the 
             main clock
         
         """
@@ -192,15 +195,15 @@ class Recording(ABC):
                 
         matching_node = [sync for sync in self.sync_lines 
                          if sync['processor_id'] == processor_id and
-                            sync['subprocessor_id'] == subprocessor_id]
+                            sync['stream_index'] == stream_index]
         
         if len(matching_node) == 1:
             self.sync_lines.remove(matching_node[0])
             warnings.warn('Another sync line exists for this node, overwriting.')
         
-        self.sync_lines.append({'channel' : channel,
+        self.sync_lines.append({'line' : line,
                                 'processor_id' : processor_id,
-                                'subprocessor_id' : subprocessor_id,
+                                'stream_index' : stream_index,
                                 'main' : main})
         
     def compute_global_timestamps(self):
@@ -210,8 +213,8 @@ class Recording(ABC):
         """
         
         if len(self.sync_lines) == 0:
-            raise Exception('At least two sync channels must be specified ' + 
-                            'using `add_sync_channel` before global timestamps ' + 
+            raise Exception('At least two sync lines must be specified ' + 
+                            'using `add_sync_line` before global timestamps ' + 
                             'can be computed.')
 
         main = [sync for sync in self.sync_lines 
@@ -227,13 +230,13 @@ class Recording(ABC):
             
         main = main[0]
             
-        main_events = self.events[(self.events.channel == main['channel']) & 
+        main_events = self.events[(self.events.line == main['line']) & 
                    (self.events.processor_id == main['processor_id']) & 
-                   (self.events.subprocessor_id == main['subprocessor_id']) &
+                   (self.events.stream_index == main['stream_index']) &
                    (self.events.state == 1)]
         
-        main_start_sample = main_events.iloc[0].timestamp
-        main_total_samples = main_events.iloc[-1].timestamp - main_start_sample
+        main_start_sample = main_events.iloc[0].sample_number
+        main_total_samples = main_events.iloc[-1].sample_number - main_start_sample
         main['start'] = main_start_sample
         main['scaling'] = 1
         main['offset'] = main_start_sample
@@ -241,18 +244,18 @@ class Recording(ABC):
         for continuous in self.continuous:
 
             if (continuous.metadata['processor_id'] == main['processor_id']) and \
-               (continuous.metadata['subprocessor_id'] == main['subprocessor_id']):
+               (continuous.metadata['stream_index'] == main['stream_index']):
                main['sample_rate'] = continuous.metadata['sample_rate']
         
         for aux in aux_channels:
             
-            aux_events = self.events[(self.events.channel == aux['channel']) & 
+            aux_events = self.events[(self.events.channel == aux['line']) & 
                    (self.events.processor_id == aux['processor_id']) & 
-                   (self.events.subprocessor_id == aux['subprocessor_id']) &
+                   (self.events.stream_index == aux['stream_index']) &
                    (self.events.state == 1)]
             
-            aux_start_sample = aux_events.iloc[0].timestamp
-            aux_total_samples = aux_events.iloc[-1].timestamp - aux_start_sample
+            aux_start_sample = aux_events.iloc[0].sample_number
+            aux_total_samples = aux_events.iloc[-1].sample_number - aux_start_sample
             
             aux['start'] = aux_start_sample
             aux['scaling'] = main_total_samples / aux_total_samples
@@ -264,19 +267,19 @@ class Recording(ABC):
             for continuous in self.continuous:
 
                 if (continuous.metadata['processor_id'] == sync['processor_id']) and \
-                   (continuous.metadata['subprocessor_id'] == sync['subprocessor_id']):
+                   (continuous.metadata['stream_index'] == sync['stream_index']):
                        
                     continuous.global_timestamps = \
-                        ((continuous.timestamps - sync['start']) * sync['scaling'] \
+                        ((continuous.sample_numbers - sync['start']) * sync['scaling'] \
                             + sync['offset']) 
                             
                     if self.format != 'nwb': # already scaled to seconds
                         continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate']
                             
             event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
-                   (self.events.subprocessor_id == sync['subprocessor_id'])].index.values
+                   (self.events.stream_index == sync['stream_index'])].index.values
             
-            global_timestamps = (self.events.loc[event_inds].timestamp - sync['start']) \
+            global_timestamps = (self.events.loc[event_inds].sample_number - sync['start']) \
                                   * sync['scaling'] \
                                    + sync['offset']
                                    
