@@ -6,10 +6,15 @@ This module makes it possible to control the [Open Ephys GUI](https://open-ephys
 
 ### Initialization
 
-To control a GUI instance running on the same machine, simply enter:
+First, load the module:
 
 ```python
 from open_ephys.control import OpenEphysHTTPServer
+```
+
+To control a GUI instance running on the same machine, simply enter:
+
+```python
 gui = OpenEphysHTTPServer()
 ```
 

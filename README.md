@@ -52,12 +52,12 @@ directory = '/path/to/data/2020-11-10_09-28-30' # for example
 session = Session(directory)
 ```
 
-If the directory contains data from one more Record Nodes (GUI version 0.5+), the `session` object will contain a list of RecordNodes, accessible via `session.recordnodes[N]`, where `N = 0, 1, 2,`, etc.  
+If the directory contains data from one more Record Nodes, the `session` object will contain a list of Record Nodes, accessible via `session.recordnodes[N]`, where `N = 0, 1, 2,`, etc.  
 
-If your directory just contains data (any GUI version), individual recordings can be accessed via `session.recordings`. The format of the recordings will be detected automatically as either 
+If your directory just contains data (e.g. you specified a Record Node directory), individual recordings can be accessed via `session.recordings`. The format of the recordings will be detected automatically as either 
 [Binary](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
 [Open Ephys](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Open-Ephys-format.html), or
-[NWB 2.0](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html).
+[NWB 2](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html).
 
 Each `recording` object has the following fields:
 
@@ -69,7 +69,7 @@ More details about `continuous`, `spikes`, and `events` objects can be found in 
 
 ### [control](open_ephys/control)
 
-First, launch an instance of Open Ephys, and make sure a [Network Events](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Network-Events.html) plugin is in the signal chain.
+First, launch an instance of the Open Ephys GUI (version `0.6.0` or higher).
 
 Then, from your Python process:
 
@@ -89,7 +89,7 @@ More details about available commands can be found in the [control module README
 
 ### [streaming](open_ephys/streaming)
 
-First, launch an instance of Open Ephys, and make sure a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin is in the signal chain.
+First, launch an instance of the Open Ephys GUI and make sure an [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin is in the signal chain.
 
 Then, from your Python process:
 

@@ -1,8 +1,8 @@
 # `open_ephys.streaming`
 
-This module makes it possible to listen to events from the [Open Ephys GUI](https://open-ephys.org/gui) via a Python process, either running locally or over a network.
+This module makes it possible to listen to events from the [Open Ephys GUI](https://open-ephys.org/gui) via a Python process, either running locally or via a network connection.
 
-The GUI's signal chain must include a [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin in order for this module to work. The Event Broadcaster must be configured to send events in **JSON** format.
+The GUI's signal chain must include an [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin in order for this module to work. The Event Broadcaster must be configured to send events in **JSON** format.
 
 ## Usage
 
@@ -38,7 +38,7 @@ def ttl_callback(info):
 
 ```
 
-The TTL callback should be designed to handle a Python dictionary with the following contents:
+The `ttl_callback` should be designed to handle a Python dictionary with the following contents:
 
 ```
 {
@@ -54,7 +54,7 @@ The TTL callback should be designed to handle a Python dictionary with the follo
 
 ```
 
-The spike callback should be designed to handle a Python dictionary with the following contents:
+The `spike_callback` should be designed to handle a Python dictionary with the following contents:
 
 ```
 {
@@ -85,4 +85,3 @@ stream.start(ttl_callback=ttl_callback,
 
 To stop listening, press `ctrl-C`.
 
-**Note:** If you start streaming without defining any callbacks, it will print the contents of each event.
