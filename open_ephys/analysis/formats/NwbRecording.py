@@ -37,35 +37,25 @@ class NwbRecording(Recording):
     class Spikes:
         
         def __init__(self, nwb, dataset):
-            
-            
+        
             self.metadata = {}
             self.metadata['name'] = dataset
             self.metadata['channel_count'] = nwb['acquisition'][dataset]['data'][()].shape[1]
 
             self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
             self.waveforms = nwb['acquisition'][dataset]['data'][()]
-            self.electrodes = nwb['acquisition'][dataset]['electrodes'][()]
-
-            order = np.argsort(self.timestamps)
-            
-            self.timestamps = self.timestamps[order]
-            self.waveforms = self.waveforms[order,:,:]
-            self.electrodes = self.electrodes[order]
     
     class Continuous:
         
         def __init__(self, nwb, dataset):
 
-            self.name = dataset
+            self.metadata = {}
+            self.metadata['name'] = dataset
             
             self.samples = nwb['acquisition'][dataset]['data'][()]
+            self.sample_numbers = nwb['acquisition'][dataset]['sync'][()]
             self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
             
-            self.metadata = {}
-            self.metadata['sample_rate'] = 1/np.mean(np.diff(self.timestamps))
-            self.metadata['name'] = dataset
-    
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
        Recording.__init__(self, directory, experiment_index, recording_index)  
@@ -112,11 +102,13 @@ class NwbRecording(Recording):
                 
                 ds = self.nwb['acquisition'][dataset]
                 channel_states = ds['data'][()]
-                timestamps = ds['timestamps']
+                sample_numbers = ds['sync'][()]
+                timestamps = ds['timestamps'][()]
                 
                 events.append(pd.DataFrame(
                     data = {'line' : np.abs(channel_states),
                             'timestamp' : timestamps,
+                            'sample_number' : sample_numbers,
                             'processor_id' : [processor_id] * len(channel_states),
                             'stream_index' : [stream_id] * len(channel_states),
                             'state' : (np.sign(channel_states) + 1 / 2).astype('int')}))
@@ -173,14 +165,15 @@ class NwbRecording(Recording):
         nwb_files.sort()
         
         for experiment_index, file in enumerate(nwb_files):
-                    
-            f = h5.File(file, 'r')
-            
-            #for recording_index, r in enumerate(f['acquisition']['timeseries'].keys()):
-                
-            recordings.append(NwbRecording(directory,
-                                                    experiment_index,
-                                                    0))
-            f.close()
+
+            try:      
+                f = h5.File(file, 'r')
+            except BlockingIOError:
+                print("Error: " + file + "\nis likely still in use. Try closing the GUI and re-loading the session object.")
+            else:
+                recordings.append(NwbRecording(directory,
+                                                        experiment_index,
+                                                        0))
+                f.close()
             
         return recordings

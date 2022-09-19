@@ -70,7 +70,6 @@ Each `continuous` object has four properties:
 - `timestamps` - a `numpy.ndarray` that holds global timestamps (in seconds) for each sample, assuming all data streams were synchronized in this recording. This will have the same size as the first dimension of the `samples` array
 - `metadata` - a `dict` containing information about this data, such as the ID of the processor it originated from.
 
-
 ## Loading event data
 
 Event data for each recording is accessed via the `.events` property of each `Recording` object. This returns a pandas DataFrame with the following columns:
@@ -82,7 +81,6 @@ Event data for each recording is accessed via the `.events` property of each `Re
 - `stream_index` - the index of the stream from which this event originated
 - `state` - 1 or 0, to indicate whether this is a rising edge or falling edge event
 
-
 ## Loading spike data
 
 If spike data has been saved by your Record Node (i.e., there is a Spike Detector or Spike Sorter upstream in the signal chain), this can be accessed via the `.spikes` property of each `Recording` object. This returns a list of spike sources, each of which has the following properties:
@@ -93,12 +91,11 @@ If spike data has been saved by your Record Node (i.e., there is a Spike Detecto
 - `electrodes` - `numpy.ndarray` containing the index of the electrode from which each spike originated
 - `metadata` - `dict` with metadata about each electrode
 
-
 ## Synchronizing timestamps
 
 If your recording contains data from multiple streams that were not synchronized during the recording, you'll likely want to synchronize their timestamps prior to further analysis.
 
-Assuming they each have one event channel that was connected to the same *physical digital input line*, synchronization is straightforward.
+Assuming they each have one event channel that was connected to the same _physical digital input line_, synchronization is straightforward.
 
 First, indicate which event lines share the sync input (this will depend on your recording configuration):
 
@@ -117,7 +114,7 @@ recording.add_sync_line(1,          # TTL line number
 
 recording.add_sync_line(1,          # TTL line number
                         100,        # processor ID
-                        1,          # subprocessor ID (defaults to 0)
+                        1,          # stream index (defaults to 0)
                         main=False) # align to the main stream
 ```
 
@@ -132,6 +129,3 @@ recording.compute_global_timestamps()
 will generate `global_timestamps` values for each `Continuous` object with a sync line, as well as a `global_timestamp` column in the `recording.events` DataFrame.
 
 Now, you can work with your data aligned to a common timebase.
-
-
-
