@@ -76,7 +76,7 @@ class OpenEphysRecording(Recording):
         
         def __init__(self, files, recording_index):
             
-            timestamps = []
+            sample_numbers = []
             waveforms = []
             electrodes = []
             
@@ -85,25 +85,25 @@ class OpenEphysRecording(Recording):
             
             for i, file in enumerate(files):
             
-                ts, wv, header = load(file, recording_index)
+                sn, wv, header = load(file, recording_index)
                 
-                timestamps.append(ts)
+                sample_numbers.append(sn)
                 waveforms.append(wv)
-                electrodes.append(np.array([i] * len(ts)))
+                electrodes.append(np.array([i] * len(sn)))
                 
                 self.metadata['names'].append(header['electrode'])
                 
-            self.timestamps = np.concatenate(timestamps)
+            self.sample_numbers = np.concatenate(sample_numbers)
             self.waveforms = np.concatenate(waveforms, axis=0)
             self.electrodes = np.concatenate(electrodes)
             
-            order = np.argsort(self.timestamps)
+            order = np.argsort(self.sample_numbers)
             
-            self.timestamps = self.timestamps[order]
+            self.sample_numbers = self.sample_numbers[order]
             self.waveforms = self.waveforms[order,:,:]
             self.electrodes = self.electrodes[order]
 
-            self.summary = pd.DataFrame(data = {'timestamp' : self.timestamps,
+            self.summary = pd.DataFrame(data = {'sample_numbers' : self.sample_numbers,
                     'electrode' : self.electrodes})
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
@@ -165,16 +165,16 @@ class OpenEphysRecording(Recording):
                 for stream_index, stream in enumerate(child):
                     for file_index, file in enumerate(stream):
                         if file.tag == 'EVENTS':
-                            timestamps, processor_id, state, channel, header = \
+                            sample_number, processor_id, state, channel, header = \
                                 load(os.path.join(self.directory, 
                                       file.get('filename')), self.recording_index)
                             events.append(pd.DataFrame(data = {'line' : channel + 1,
-                              'timestamp' : timestamps,
+                              'sample_number' : sample_number,
                               'processor_id' : processor_id,
-                              'stream_index' : [stream_index] * len(timestamps),
+                              'stream_index' : [stream_index] * len(sample_number),
                               'state' : state}))
 
-        self._events = pd.concat(events).sort_values(by='timestamp')
+        self._events = pd.concat(events).sort_values(by='sample_number')
 
     def load_messages(self):
         

@@ -132,8 +132,8 @@ def load_continuous(filename, recording_index):
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N data sample
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N data samples
     
     samples - np.array (N x M)
         Samples for each of M channels
@@ -191,8 +191,8 @@ def load_events(filename, recording_index):
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N events
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N events
     
     processor_id - np.array (N x 0)
         Processor ID for each of N events
@@ -210,7 +210,7 @@ def load_events(filename, recording_index):
     
     header = readHeader(filename)
 
-    timestamps = np.array(np.memmap(filename, dtype='<i8', offset=1024, mode='r')[::2])
+    sample_numbers = np.array(np.memmap(filename, dtype='<i8', offset=1024, mode='r')[::2])
     
     data = np.memmap(filename, dtype='<u1', offset=1024, mode='r', shape=(len(timestamps), EVENT_RECORD_SIZE //2))
     
@@ -221,7 +221,7 @@ def load_events(filename, recording_index):
     state = np.array(data[mask,12])
     channel = np.array(data[mask,13])
     
-    return timestamps[mask], processor_id, state, channel, header
+    return sample_numbers[mask], processor_id, state, channel, header
 
 
 def load_spikes(filename, recording_number):
@@ -241,8 +241,8 @@ def load_spikes(filename, recording_number):
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N spikes
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N spikes
     
     waveforms - np.array (N x channels x samples)
         Waveforms for each spike
