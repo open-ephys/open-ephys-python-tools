@@ -43,6 +43,7 @@ class NwbRecording(Recording):
             self.metadata['channel_count'] = nwb['acquisition'][dataset]['data'][()].shape[1]
 
             self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
+            self.sample_numbers = nwb['acquisition'][dataset]['sync'][()]
             self.waveforms = nwb['acquisition'][dataset]['data'][()]
     
     class Continuous:
@@ -51,6 +52,10 @@ class NwbRecording(Recording):
 
             self.metadata = {}
             self.metadata['name'] = dataset
+            self.metadata['sample_rate'] = np.around(1 / nwb['acquisition'][dataset]['timestamps'].attrs['interval'], 1)
+            self.metadata['num_channels'] = nwb['acquisition'][dataset]['data'].shape[0]
+            self.metadata['processor_id'] = int(dataset.split('.')[0].split('-')[-1])
+            self.metadata['stream_name'] = dataset.split('.')[-1]
             
             self.samples = nwb['acquisition'][dataset]['data'][()]
             self.sample_numbers = nwb['acquisition'][dataset]['sync'][()]
