@@ -285,6 +285,18 @@ class OpenEphysHTTPServer:
         data = self.send('/api/recording', payload)
         return data
 
+    def set_start_new_dir(self):
+
+        """
+        Set if GUI should start a new directory for the next recording.
+        """
+
+        payload = {
+            'start_new_directory': "true"
+        }
+        data = self.send('/api/recording', payload)
+        return data
+
     def set_file_path(self, node_id, file_path):
 
         """
