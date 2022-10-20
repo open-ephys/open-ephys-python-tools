@@ -152,6 +152,56 @@ class OpenEphysHTTPServer:
         else:
             return [x for x in data['processors'] if x['name'] == filter_by_name]
 
+    def add_processor(self, name, source=None, dest=None):
+
+        """
+        Add a processor to the signal chain.
+
+        Parameters
+        ----------
+        name : String
+            The name of the processor to add (e.g. "Record Node")
+        source : Integer
+            The 3-digit processor ID of the source (e.g. 101)
+        dest : Integer
+            The 3-digit processor ID of the destination (e.g. 102)
+        """
+
+        endpoint = '/api/processors/add'
+        payload = { 'name' : name }
+
+        # If only processor name is specified, set source to most recently added processor
+        if source is None and dest is None:
+            payload['source_id'] = max(self.get_processors()['processors'], key=lambda processor: processor['id'])['id']
+        if source is not None:
+            payload['source_id'] = source
+        if dest is not None:
+            payload['dest_id'] = dest
+
+        data = self.send(endpoint, payload)
+
+        return data
+
+    def delete_processor(self, processor_id):
+
+        """
+        Delete a processor.
+
+        Parameters
+        ----------
+        processor_id : Integer
+            The 3-digit processor ID (e.g. 101)
+        """
+
+        endpoint = '/api/processors/delete'
+        payload = {
+            'id' : processor_id
+        }
+
+        data = self.send(endpoint, payload)
+
+        return data
+
     def get_param(self, processor_id, stream_index):
 
         """
