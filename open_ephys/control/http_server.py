@@ -148,7 +148,7 @@ class OpenEphysHTTPServer:
 
         data = self.send('/api/processors')
         if filter_by_name == "":
-            return data
+            return data["processors"]
         else:
             return [x for x in data['processors'] if x['name'] == filter_by_name]
 
@@ -172,7 +172,7 @@ class OpenEphysHTTPServer:
 
         # If only processor name is specified, set source to most recently added processor
         if source is None and dest is None:
-            payload['source_id'] = max(self.get_processors()['processors'], key=lambda processor: processor['id'])['id']
+            payload['source_id'] = max(self.get_processors(), key=lambda processor: processor['id'])['id']
         if source is not None:
             payload['source_id'] = source
         if dest is not None:
@@ -265,7 +265,6 @@ class OpenEphysHTTPServer:
             return data[key]
         else:
             return "Invalid key"
-
 
     def set_parent_dir(self, path):
 
