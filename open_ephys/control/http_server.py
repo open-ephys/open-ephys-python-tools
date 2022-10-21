@@ -135,6 +135,15 @@ class OpenEphysHTTPServer:
         time.sleep(1)
         return res
 
+    def get_processor_list(self):
+
+        """
+        Returns all available processors in the GUI's Processor List
+        """
+
+        data = self.send('/api/processors/list')
+        return [processor["name"] for processor in data['processors']]
+
     def get_processors(self, filter_by_name=""):
 
         """
