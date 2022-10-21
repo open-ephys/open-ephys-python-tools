@@ -161,6 +161,16 @@ class OpenEphysHTTPServer:
         else:
             return [x for x in data['processors'] if x['name'] == filter_by_name]
 
+    def clear_signal_chain(self):
+
+        """
+        Clear the signal chain.
+        """
+
+        data = self.send('/api/processors/clear')
+
+        return data
+
     def add_processor(self, name, source=None, dest=None):
 
         """
