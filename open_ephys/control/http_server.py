@@ -568,8 +568,8 @@ class OpenEphysHTTPServer:
         """
         latest_recordings = []
         list_of_files = glob.glob(os.path.join(directory, '**'))
-        print(list_of_files)
-        while count > 0:
+
+        while count > 0 and len(list_of_files) > 0:
             latest_file = max(list_of_files, key=os.path.getctime)
             latest_recordings.append(os.path.join(directory, latest_file))
             list_of_files.remove(latest_file)
