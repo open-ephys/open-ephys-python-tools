@@ -229,3 +229,68 @@ class BinaryRecording(Recording):
                                                        recording_index))
                 
         return recordings
+
+    @staticmethod
+    def create_oebin_file(
+        output_path, 
+        stream_name="example_data",
+        channel_count=16,
+        sample_rate=30000.,
+        bit_volts=0.195):
+
+        """
+        Generates structure.oebin (JSON) file for one data stream
+
+        A minimal directory structure for the Binary format looks 
+        like this:
+
+        data-directory/
+            continuous/
+                stream_name/
+                    continuous.dat
+            structure.oebin
+
+        To export a [samples x channels] numpy array, A (in microvolts), into 
+        a .dat file, use the following code: 
+
+        >> A_scaled = A / bit_volts # usually 0.195
+        >> A_scaled.astype('int16').tofile('/path/to/continuous.dat')
+
+        Parameters
+        ----------
+        output_path : string
+            directory in which to write the file (structure.oebin will
+            be added automatically)
+        stream_name : string
+            name of the sub-directory containing the .dat file
+        channel_count : int
+            number of channels stored in the .dat file
+        sample_rate : float
+            samples rate of the .dat file
+        bit_volts : float
+            scaling factor required to convert int16 values in to µV
+        
+        """
+
+        output = dict()
+        output["GUI version"] = "0.6.0"
+        
+        output["continuous"] = [{
+            "folder_name" : stream_name,
+            "sample_rate" : sample_rate,
+            "stream_name" : stream_name,
+            "num_channels" : channel_count,
+            "channels": [{
+                    "channel_name" : "CH" + str(i+1),
+                    "bit_volts" : bit_volts
+                    } for i in range(channel_count)]
+        }]
+
+        with open(os.path.join(
+            output_path, 
+            'structure.oebin'), "w") as outfile:
+            outfile.write(json.dumps(output, indent=4))
+
+
+
+        
