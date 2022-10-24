@@ -36,15 +36,21 @@ class BinaryRecording(Recording):
         
         def __init__(self, info, base_directory, version):
         
-            directory = os.path.join(base_directory, 'spikes', info['folder'])
-            
             if version >= 0.6:
+                directory = os.path.join(base_directory, 'spikes', info['folder'])
                 self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
                 self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
                 self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
                 self.waveforms = np.load(os.path.join(directory, 'waveforms.npy'))
                 self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
+
+                self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
+                    'timestamp' : self.timestamps,
+                    'electrode' : self.electrodes,
+                    'cluster' : self.clusters})
+
             else:
+                directory = os.path.join(base_directory, 'spikes', info['folder_name'])
                 self.sample_numbers = np.load(os.path.join(directory, 'spike_times.npy'))
                 self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy')) - 1
                 self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy'))
@@ -52,11 +58,6 @@ class BinaryRecording(Recording):
 
             if self.waveforms.ndim == 2:
                 self.waveforms = np.expand_dims(self.waveforms, 1)
-
-            self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
-                    'timestamp' : self.timestamps,
-                    'electrode' : self.electrodes,
-                    'cluster' : self.clusters})
     
     class Continuous:
         
@@ -168,9 +169,17 @@ class BinaryRecording(Recording):
             self._events = None
     
     def load_messages(self):
-        search_string = os.path.join(self.directory,
+        
+        if self._version >= 0.6:
+            search_string = os.path.join(self.directory,
                             'events',
                             'MessageCenter')
+        else:
+            search_string = os.path.join(self.directory,
+                            'events',
+                            'Message_Center-904.0', 'TEXT_group_1'
+                            )
+
         msg_center_dir = glob.glob(search_string)
 
         df = []
@@ -186,7 +195,7 @@ class BinaryRecording(Recording):
                 sample_numbers = np.load(os.path.join(msg_center_dir, 'timestamps.npy'))
                 timestamps = np.zeros(sample_numbers.shape) * -1
 
-            text = np.load(os.path.join(msg_center_dir, 'text.npy'))
+            text = [msg.decode('utf-8') for msg in np.load(os.path.join(msg_center_dir, 'text.npy'))]
 
             df = pd.DataFrame(data = { 'sample_number' : sample_numbers,
                     'timestamp' : timestamps,
