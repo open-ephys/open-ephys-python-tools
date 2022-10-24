@@ -34,20 +34,24 @@ class BinaryRecording(Recording):
     
     class Spikes:
         
-        def __init__(self, info, base_directory):
+        def __init__(self, info, base_directory, version):
         
             directory = os.path.join(base_directory, 'spikes', info['folder'])
             
-            self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
-            self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
-            self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
-        
-            self.waveforms = np.load(os.path.join(directory, 'waveforms.npy'))
-            
+            if version >= 0.6:
+                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
+                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+                self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
+                self.waveforms = np.load(os.path.join(directory, 'waveforms.npy'))
+                self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
+            else:
+                self.sample_numbers = np.load(os.path.join(directory, 'spike_times.npy'))
+                self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy')) - 1
+                self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy'))
+                self.clusters = np.load(os.path.join(directory, 'spike_clusters.npy'))
+
             if self.waveforms.ndim == 2:
                 self.waveforms = np.expand_dims(self.waveforms, 1)
-
-            self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
 
             self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
                     'timestamp' : self.timestamps,
@@ -56,7 +60,7 @@ class BinaryRecording(Recording):
     
     class Continuous:
         
-        def __init__(self, info, base_directory):
+        def __init__(self, info, base_directory, version):
             
             directory = os.path.join(base_directory, 'continuous', info['folder_name'])
 
@@ -66,11 +70,19 @@ class BinaryRecording(Recording):
             self.metadata['sample_rate'] = info['sample_rate']
             self.metadata['num_channels'] = info['num_channels']
             self.metadata['processor_id'] = info['source_processor_id']
-            self.metadata['stream_name'] = info['stream_name']
+
+            if version >= 0.6:
+                self.metadata['stream_name'] = info['stream_name']
+            else:
+                self.metadata['stream_name'] = str(info['source_processor_sub_idx'])
+
             self.metadata['names'] = [ch['channel_name'] for ch in info['channels']]
             
-            self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
-            self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+            if version >= 0.6:
+                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
+                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+            else:
+                self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'))
 
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
@@ -84,17 +96,16 @@ class BinaryRecording(Recording):
        
        self.info = json.load(open(os.path.join(self.directory, 'structure.oebin')))
        self._format = 'binary'
+       self._version = float(".".join(self.info['GUI version'].split('.')[:2]))
        
     def load_continuous(self):
         
-        
         self._continuous = []
-        
-        
+
         for info in self.info['continuous']:
             
             try:
-                c = self.Continuous(info, self.directory)
+                c = self.Continuous(info, self.directory, self._version)
             except FileNotFoundError:
                 pass
             else:
@@ -104,7 +115,8 @@ class BinaryRecording(Recording):
         
         self._spikes = []
         
-        self._spikes.extend([self.Spikes(info, self.directory) for info in self.info['spikes']])
+        self._spikes.extend([self.Spikes(info, self.directory, self._version) 
+                             for info in self.info['spikes']])
 
     
     def load_events(self):
@@ -128,9 +140,14 @@ class BinaryRecording(Recording):
             
             streamIdx += 1
             
-            channels = np.load(os.path.join(events_directory, 'states.npy'))
-            sample_numbers = np.load(os.path.join(events_directory, 'sample_numbers.npy'))
-            timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
+            if self._version >= 0.6:
+                channels = np.load(os.path.join(events_directory, 'states.npy'))
+                sample_numbers = np.load(os.path.join(events_directory, 'sample_numbers.npy'))
+                timestamps = np.load(os.path.join(events_directory, 'timestamps.npy'))
+            else:
+                channels = np.load(os.path.join(events_directory, 'channel_states.npy'))
+                sample_numbers = np.load(os.path.join(events_directory, 'timestamps.npy'))
+                timestamps = np.ones(sample_numbers.shape) * -1
         
             df.append(pd.DataFrame(data = {'line' : np.abs(channels),
                               'sample_number' : sample_numbers,
@@ -139,11 +156,12 @@ class BinaryRecording(Recording):
                               'stream_index' : [streamIdx] * len(channels),
                               'state' : (channels > 0).astype('int')}))
             
-        
-            
         if len(df) > 0:
-                                               
-            self._events = pd.concat(df).sort_values(by=['timestamp', 'stream_index'], ignore_index=True)
+
+            if self._version >= 0.6:                  
+                self._events = pd.concat(df).sort_values(by=['timestamp', 'stream_index'], ignore_index=True)
+            else:
+                self._events = pd.concat(df).sort_values(by=['sample_number', 'stream_index'], ignore_index=True)
 
         else:
             
@@ -160,8 +178,14 @@ class BinaryRecording(Recording):
         if len(msg_center_dir) == 1:
 
             msg_center_dir = msg_center_dir[0]
-            sample_numbers = np.load(os.path.join(msg_center_dir, 'sample_numbers.npy'))
-            timestamps = np.load(os.path.join(msg_center_dir, 'timestamps.npy'))
+
+            if self._version >= 0.6:
+                sample_numbers = np.load(os.path.join(msg_center_dir, 'sample_numbers.npy'))
+                timestamps = np.load(os.path.join(msg_center_dir, 'timestamps.npy'))
+            else:
+                sample_numbers = np.load(os.path.join(msg_center_dir, 'timestamps.npy'))
+                timestamps = np.zeros(sample_numbers.shape) * -1
+
             text = np.load(os.path.join(msg_center_dir, 'text.npy'))
 
             df = pd.DataFrame(data = { 'sample_number' : sample_numbers,
@@ -170,7 +194,7 @@ class BinaryRecording(Recording):
 
         if len(df) > 0:
 
-            self._messages = df;
+            self._messages = df
 
         else:
 
