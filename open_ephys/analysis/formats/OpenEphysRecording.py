@@ -42,6 +42,7 @@ class OpenEphysRecording(Recording):
             
             self.name = files[0].strip().split('_')[-2]
             self.files = files
+            self.timestamps_file = info['timestamps_file']
             self.recording_index = recording_index
             self.sample_numbers, _, _, self.valid_records = load(files[0], recording_index)
             self.global_timestamps = None
@@ -53,11 +54,11 @@ class OpenEphysRecording(Recording):
 
             self.metadata = {}
 
-            self.metadata['stream_name'] = info['name']
+            self.metadata['stream_name'] = info['stream_name']
             self.metadata['source_node_id'] = info['source_node_id']
             self.metadata['source_node_name'] = info['source_node_name']
             self.metadata['sample_rate'] = info['sample_rate']
-            self.metadata['channel_names'] = []
+            self.metadata['channel_names'] = info['channel_names']
 
             self._load_timestamps()
 
@@ -143,12 +144,6 @@ class OpenEphysRecording(Recording):
 
         def _load_timestamps(self):
 
-            for file_idx, file in enumerate(self.files):
-                 
-                if os.path.splitext(file)[1] != '.continuous':
-                    self.timestamps_file = file
-                    break
-
             data = np.array(np.memmap(self.timestamps_file, dtype='<f8', offset=0, mode='r'))[self.valid_records]
             data = np.append(data, 2 * data[-1] - data[-2])
 
@@ -208,19 +203,22 @@ class OpenEphysRecording(Recording):
        
     def load_continuous(self):
         
-        files, stream_inds, unique_stream_inds, stream_info = self.find_continuous_files()
+        continuous_files, stream_indexes, unique_stream_indexes, stream_info = \
+            self.find_continuous_files()
         self._continuous = []
 
-        for stream_index in unique_stream_inds:
+        for stream_index in unique_stream_indexes:
 
             files_for_stream = [ ]
-            for ind, filename in enumerate(files):
-                if stream_inds[ind] == stream_index:
+            for ind, filename in enumerate(continuous_files):
+                if stream_indexes[ind] == stream_index:
                     files_for_stream.append(os.path.join(self.directory, filename))
 
             print(stream_info)
 
-            self._continuous.append(self.Continuous(stream_info[stream_index], files_for_stream, self.recording_index))
+            self._continuous.append(self.Continuous(stream_info[stream_index], 
+                            files_for_stream, 
+                            self.recording_index))
         
     def load_spikes(self):
 
@@ -299,15 +297,17 @@ class OpenEphysRecording(Recording):
                     info['source_node_id'] = stream.get('source_node_id')
                     info['source_node_name'] = stream.get('source_node_name')
                     info['sample_rate'] = float(stream.get('sample_rate'))
-
-                    stream_info.append(info)
+                    info['channel_names'] = []
 
                     for file_index, file in enumerate(stream):
-                        if file.tag in ('CHANNEL', 'TIMESTAMPS'):
+                        if file.tag == 'CHANNEL':
                             continuous_files.append(file.get('filename'))
+                            info['channel_names'].append(file.get('name'))
                             stream_indexes.append(stream_index)
                         elif file.tag == 'TIMESTAMPS':
-                            timestamps_file = file.get('filename')
+                            info['timestamps_file'] = os.path.join(self.directory, file.get('filename'))
+
+                    stream_info.append(info)
         
         return continuous_files, stream_indexes, unique_stream_indexes, stream_info
 
