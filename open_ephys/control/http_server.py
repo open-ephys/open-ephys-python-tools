@@ -222,7 +222,7 @@ class OpenEphysHTTPServer:
 
         return data
 
-    def get_param(self, processor_id, stream_index):
+    def get_parameters(self, processor_id, stream_index):
 
         """
         Get parameters for a stream.
@@ -240,7 +240,7 @@ class OpenEphysHTTPServer:
 
         return data
 
-    def set_param(self, processor_id, stream_index, param_name, value):
+    def set_parameter(self, processor_id, stream_index, param_name, value):
 
         """
         Update a parameter value
