@@ -115,7 +115,7 @@ def load(filename, recording_index):
     else:
         raise Exception("File extension " + extension + " not recognized")
 
-def load_continuous(filename, recording_index):
+def load_continuous(filename, recording_index, start_sample=None, end_sample=None):
     
     """
     Loads continuous data, using memory mapping to improve performance
@@ -129,6 +129,12 @@ def load_continuous(filename, recording_index):
     
     recording_index - int
         index of the recording (0, 1, 2, etc.)
+
+    start_sample - int
+        first sample to load (if None, load from the beginning of the recording)
+
+    end_sample - int
+        last sample to load (if None, load until the end of the recording)
         
     Output:
     ======
@@ -171,7 +177,17 @@ def load_continuous(filename, recording_index):
     
     sample_numbers = np.arange(start_sample_number, start_sample_number + samples.size)
 
-    return sample_numbers, samples, header, valid_records
+    if start_sample is not None:
+        start = np.searchsorted(sample_numbers, start_sample)
+    else:
+        start = 0
+    
+    if end_sample is not None:
+        end = np.searchsorted(sample_numbers, end_sample)
+    else:
+        end = len(sample_numbers)
+
+    return sample_numbers, samples[start:end], header, valid_records
 
 
 def load_events(filename, recording_index):

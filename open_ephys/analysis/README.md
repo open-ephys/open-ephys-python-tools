@@ -70,6 +70,20 @@ Each `continuous` object has four properties:
 - `timestamps` - a `numpy.ndarray` that holds global timestamps (in seconds) for each sample, assuming all data streams were synchronized in this recording. This will have the same size as the first dimension of the `samples` array
 - `metadata` - a `dict` containing information about this data, such as the ID of the processor it originated from.
 
+### Using the Open Ephys data format
+
+Because the data files from the Open Ephys format cannot be memory-mapped effectively, all of the samples must be loaded into memory. For long recordings, it may not be possible to load all of the channels at once. Before requesting the `samples` property of a `continuous` object in Open Ephys format, you can uses the following functions to restrict the data to a certain sample range or a certain set of channels:
+
+```python
+>> recording = session.recordnodes[0].recording[0] # loads the sample numbers, timestamps, and metadata
+>> recording.set_sample_range([10000, 50000])
+>> recording.set_selected_channels([np.arange(10,15)])
+>> recording.samples.shape  # loads the samples
+
+(40000, 5)
+
+```
+
 ## Loading event data
 
 Event data for each recording is accessed via the `.events` property of each `Recording` object. This returns a pandas DataFrame with the following columns:

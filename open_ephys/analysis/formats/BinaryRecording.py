@@ -77,7 +77,7 @@ class BinaryRecording(Recording):
             else:
                 self.metadata['stream_name'] = str(info['source_processor_sub_idx'])
 
-            self.metadata['names'] = [ch['channel_name'] for ch in info['channels']]
+            self.metadata['channel_names'] = [ch['channel_name'] for ch in info['channels']]
             
             if version >= 0.6:
                 self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))

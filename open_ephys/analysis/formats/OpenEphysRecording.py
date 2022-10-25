@@ -30,7 +30,7 @@ import numpy as np
 
 import xml.etree.ElementTree as XmlElementTree
 
-from open_ephys.analysis.formats.helpers import load
+from open_ephys.analysis.formats.helpers import load, load_continuous
 
 from open_ephys.analysis.recording import Recording
 
@@ -41,29 +41,113 @@ class OpenEphysRecording(Recording):
         def __init__(self, info, files, recording_index):
             
             self.name = files[0].strip().split('_')[-2]
+            self.files = files
+            self.recording_index = recording_index
             self.sample_numbers, _, _, self.valid_records = load(files[0], recording_index)
             self.global_timestamps = None
-            
-            self.samples = np.zeros((len(self.sample_numbers), len(files)-1))
+
+            self.reload_required = False
+            self._samples = None
+            self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1]]
+            self.selected_channels = np.arange(len(files))
 
             self.metadata = {}
 
-            self.metadata['name'] = info['name']
+            self.metadata['stream_name'] = info['name']
             self.metadata['source_node_id'] = info['source_node_id']
             self.metadata['source_node_name'] = info['source_node_name']
             self.metadata['sample_rate'] = info['sample_rate']
-            
-            for file_idx, file in enumerate(files):
+            self.metadata['channel_names'] = []
+
+            self._load_timestamps()
+
+        @property
+        def samples(self):
+            if self._samples is None or self.reload_required:
+                self._load_samples()
+                self.reload_required = False
+            return self._samples
+
+        def set_start_sample(self, start_sample):
+            """
+            Updates start sample and triggers reload next time 
+            samples are requested.
+
+            Parameters
+            ----------
+            start_sample : int
+                First sample number (not sample index) to be loaded.
+                
+            """
+            self.sample_range[0] = start_sample
+            self.reload_required = True
+
+        def set_end_sample(self, end_sample):
+            """
+            Updates end sample and triggers reload next time 
+            samples are requested.
+
+            Parameters
+            ----------
+            end_sample : int
+                Last sample number (not sample index) to be loaded.
+                
+            """
+            self.sample_range[1] =end_sample
+            self.reload_required = True
+
+        def set_sample_range(self, sample_range):
+            """
+            Updates start and end sample and triggers reload next time 
+            samples are requested.
+
+            Parameters
+            ----------
+            sample_range : 2-element list
+                First and last sample numbers (not sample indices) to be loaded.
+                
+            """
+            self.sample_range = sample_range
+            self.reload_required = True
+
+        def set_selected_channels(self, selected_channels):
+            """
+            Updates indices of selected channels and triggers reload next time
+            samples are requested.
+
+            Parameters
+            ----------
+            selected_channels : np.ndarray
+                Indices of channels to be loaded.
+                
+            """
+            self.selected_channels = selected_channels
+            self.reload_required = True
+
+        def _load_samples(self):
+
+            total_samples = self.sample_range[1] - self.sample_range[0]
+            total_channels = len(self.selected_channels)
+
+            self._samples = np.zeros((total_samples, total_channels))
+
+            channel_idx = 0
+
+            for file_idx in self.selected_channels:
                  
-                if os.path.splitext(file)[1] == '.continuous':
-                    _, samples, _, _ = load(file, recording_index)
-                    self.samples[:,file_idx] = samples
-                else:
+                if os.path.splitext(self.files[file_idx])[1] == '.continuous':
+                    _, samples, _, _ = load_continuous(self.files[file_idx], self.recording_index, self.sample_range[0], self.sample_range[1])
+                    
+                    self._samples[:,channel_idx] = samples
+                    channel_idx += 1
+
+        def _load_timestamps(self):
+
+            for file_idx, file in enumerate(self.files):
+                 
+                if os.path.splitext(file)[1] != '.continuous':
                     self.timestamps_file = file
-
-            self.load_timestamps()
-
-        def load_timestamps(self):
+                    break
 
             data = np.array(np.memmap(self.timestamps_file, dtype='<f8', offset=0, mode='r'))[self.valid_records]
             data = np.append(data, 2 * data[-1] - data[-2])
@@ -116,6 +200,9 @@ class OpenEphysRecording(Recording):
             self.experiment_id = "_" + str(experiment_index+1)
 
         self.experiment_info = os.path.join(directory, 'structure' + self.experiment_id + '.openephys')
+
+        if not os.path.exists(self.experiment_info):
+            self.experiment_info = os.path.join(directory, 'Continuous_Data' + self.experiment_id + '.openephys')
            
         self._format = 'open-ephys'
        
@@ -130,6 +217,8 @@ class OpenEphysRecording(Recording):
             for ind, filename in enumerate(files):
                 if stream_inds[ind] == stream_index:
                     files_for_stream.append(os.path.join(self.directory, filename))
+
+            print(stream_info)
 
             self._continuous.append(self.Continuous(stream_info[stream_index], files_for_stream, self.recording_index))
         
@@ -206,7 +295,7 @@ class OpenEphysRecording(Recording):
 
                     info = {}
 
-                    info['name'] = stream.get('name')
+                    info['stream_name'] = stream.get('name')
                     info['source_node_id'] = stream.get('source_node_id')
                     info['source_node_name'] = stream.get('source_node_name')
                     info['sample_rate'] = float(stream.get('sample_rate'))
@@ -275,10 +364,6 @@ class OpenEphysRecording(Recording):
                 "Experiment Index: " + str(self.experiment_index) + "\n" + \
                 "Recording Index: " + str(self.recording_index)
                 
-        # %%
-    
-    
-    
     
     
     
