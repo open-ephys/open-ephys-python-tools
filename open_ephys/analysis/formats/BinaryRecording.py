@@ -155,6 +155,7 @@ class BinaryRecording(Recording):
                               'timestamp' : timestamps,
                               'processor_id' : [nodeId] * len(channels),
                               'stream_index' : [streamIdx] * len(channels),
+                              'stream_name' : [stream] * len(channels),
                               'state' : (channels > 0).astype('int')}))
             
         if len(df) > 0:
