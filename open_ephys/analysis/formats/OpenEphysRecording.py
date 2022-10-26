@@ -403,3 +403,79 @@ class OpenEphysRecording(Recording):
                                                     recording_index))
                 
         return recordings
+
+    @staticmethod
+    def create_openephys_file(
+        output_path, 
+        stream_name="example_data",
+        channel_count=16,
+        sample_rate=30000.,
+        bit_volts=0.195):
+
+        """
+        Generates structure.openephys (XML) file for one data stream
+
+        A minimal directory structure for the Open Ephys format looks 
+        like this:
+
+        data-directory/
+            *.continuous files
+            *.events files
+            *.spikes files 
+            *.timestamps files
+            structure.openephys
+
+        Parameters
+        ----------
+        output_path : string
+            directory in which to write the file (structure.oebin will
+            be added automatically)
+        stream_name : string
+            name of the data stream that generated the data
+        channel_count : int
+            number of .continuous files
+        sample_rate : float
+            samples rate of the .continuous files
+        bit_volts : float
+            scaling factor required to convert int16 values in to µV
+        
+        """
+
+        from xml.etree.ElementTree import Element, SubElement, tostring
+        from xml.dom import minidom
+
+        experiment = Element("EXPERIMENT")
+        experiment.attrib = {"format_version" : "0.6",
+                            "number" : "1"}
+
+        source_node_id = 100
+
+        recording = SubElement(experiment, "RECORDING")
+        recording.attrib = {"number" : "1"}
+
+        stream = SubElement(recording, "STREAM")
+        stream.attrib = {"name" : stream_name,
+                        "sample_rate" : str(sample_rate),
+                        "source_node_id" : str(source_node_id)}
+
+        prefix = "_".join([str(source_node_id), stream_name])
+
+        for i in range(channel_count):
+            channel = SubElement(stream, "CHANNEL")
+            name = "CH" + str(i+1)
+            channel.attrib = {"name" : name,
+                            "bitVolts" : str(bit_volts),
+                            "filename" : "_".join([prefix,name + '.continuous']),
+                            "position" : "1024.0"}
+            
+        events = SubElement(stream, "EVENTS")
+        events.attrib = {"filename" : prefix + ".events"}
+
+        timestamps = SubElement(stream, "TIMESTAMPS")
+        timestamps.attrib = {"filename" : prefix + ".timestamps"}
+            
+        dom = minidom.parseString(tostring(experiment))
+
+        with open(output_path, 'wb') as f:
+            f.write(dom.toprettyxml(indent='  ', encoding="UTF-8"))
+            f.close()
