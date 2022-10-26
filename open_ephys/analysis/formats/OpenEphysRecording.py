@@ -476,6 +476,6 @@ class OpenEphysRecording(Recording):
             
         dom = minidom.parseString(tostring(experiment))
 
-        with open(output_path, 'wb') as f:
+        with open(os.path.join(output_path, "structure.openephys"), 'wb') as f:
             f.write(dom.toprettyxml(indent='  ', encoding="UTF-8"))
             f.close()
