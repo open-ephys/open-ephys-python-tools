@@ -90,3 +90,5 @@ To send a TTL "OFF" event, enter:
 ```python
 network_control.send_ttl(line = 5, state = 0)
 ```
+
+The `NetworkControl` class can also be used to interact with v0.5.x of the GUI, which does not have a built-in HTTP Server.
