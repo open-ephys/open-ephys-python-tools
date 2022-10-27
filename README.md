@@ -8,11 +8,11 @@ This repository is meant to centralize and standardize Python-specific tools for
 
 It consists of three modules:
 
-1. [`analysis`](open_ephys/analysis) - loads data in every format supported by the GUI, using a common interface
+1. [`analysis`](src/open_ephys/analysis) - loads data in every format supported by the GUI, using a common interface
 
-2. [`control`](open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
+2. [`control`](src/open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
 
-3. [`streaming`](open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization
+3. [`streaming`](src/open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization
 
 ## Installation
 
