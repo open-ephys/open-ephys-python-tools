@@ -16,13 +16,11 @@ It consists of three modules:
 
 ## Installation
 
-The code in this branch is intended for use with Open Ephys GUI version `0.6.x` and higher. 
-
 Inside a Python virtual environment (`conda` or otherwise), run the following command:
 
 ```bash
 
-$ pip install https://github.com/open-ephys/open-ephys-python-tools/archive/0.6.0.zip
+$ pip install open-ephys-python-tools
 
 ```
 
@@ -36,8 +34,6 @@ $ pip install -e .
 ```
 
 *Note:* The `-e` argument links the package in the original location (rather than by copying), so any edits to the source code can be used immediately. This is optional but can be extremely useful for debugging.
-
-We will eventually add `open-ephys-python-tools` to the [Python Package Index](https://pypi.org/), but we are waiting until the code base is more stable.
 
 ## Usage
 
@@ -58,6 +54,8 @@ If your directory just contains data (e.g. you specified a Record Node directory
 [Binary](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html), 
 [Open Ephys](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Open-Ephys-format.html), or
 [NWB 2](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/NWB-format.html).
+
+*Note:* This package is intended for use with data saved by Open Ephys GUI version `0.6.x` and higher. However, the `Binary` format is backwards-compatible with data saved by version `0.5.x`. To read data saved in Open Ephys, NWB 1.0, or Kwik formats by GUI version `0.5.x` and lower, you can use code in the `archive` branch of this repository.
 
 Each `recording` object has the following fields:
 

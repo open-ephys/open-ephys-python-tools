@@ -15,6 +15,8 @@ session = Session(directory)
 
 This will create a `Session` object that holds information about your recording session. This includes all of the data that was saved in the specified directory, although the data won't be loaded into memory until it's requested.
 
+*Note:* This package is intended for use with Open Ephys GUI version `0.6.x` and higher. However, the `Binary` format is backwards-compatible with data saved by version `0.5.x`. To read data saved in Open Ephys, NWB 1.0, or Kwik formats by GUI version `0.5.x` and lower, you can use code in the `archive` branch of this repository.
+
 ## How recordings are organized
 
 The Open Ephys GUI provides a great deal of flexibility when it comes to saving data. Data is saved by any Record Nodes that have been inserted into the signal chain. This makes is possible to record both the raw data as well as data that has been transformed by different processing stages. By default, all Record Nodes will save data to the same directory, in sub-folders named "Record Node <ID>," where <ID> is the Record Node's processor ID. Each Record Node can store data in a different format, although the [Binary format](https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html) is the default format that is recommended for most use cases.
