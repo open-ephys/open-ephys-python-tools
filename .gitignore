@@ -9,9 +9,8 @@
 .DS_Store
 __pycache__
 open_ephys_python_tools.egg-info
+
 Notebooks
 notebooks
 
 .spyproject
-
-open_ephys/analysis/tests
