@@ -44,11 +44,12 @@ class OpenEphysRecording(Recording):
             self.files = files
             self.timestamps_file = info['timestamps_file']
             self.recording_index = recording_index
-            self.sample_numbers, _, _, self.valid_records = load(files[0], recording_index)
+            self._sample_numbers_internal, _, _, self.valid_records = load(files[0], recording_index)
             self.global_timestamps = None
 
             self.reload_required = False
             self._samples = None
+            self.sample_numbers = self._sample_numbers_internal
             self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1]]
             self.selected_channels = np.arange(len(files))
 
@@ -137,20 +138,28 @@ class OpenEphysRecording(Recording):
             for file_idx in self.selected_channels:
                  
                 if os.path.splitext(self.files[file_idx])[1] == '.continuous':
-                    _, samples, _, _ = load_continuous(self.files[file_idx], self.recording_index, self.sample_range[0], self.sample_range[1])
+                    sample_numbers, samples, _, _ = load_continuous(self.files[file_idx], self.recording_index, self.sample_range[0], self.sample_range[1])
                     
                     self._samples[:,channel_idx] = samples
                     channel_idx += 1
+
+            self.sample_numbers = sample_numbers
+
+            start = np.searchsorted(self._sample_numbers_internal, self.sample_range[0])
+            end = np.searchsorted(self._sample_numbers_internal, self.sample_range[1])
+            self.timestamps = self._timestamps_internal[start:end]
 
         def _load_timestamps(self):
 
             data = np.array(np.memmap(self.timestamps_file, dtype='<f8', offset=0, mode='r'))[self.valid_records]
             data = np.append(data, 2 * data[-1] - data[-2])
 
-            self.timestamps = np.array([])
+            self._timestamps_internal = np.array([])
             for i in range(len(data)-1):
-                self.timestamps = np.append(self.timestamps, np.linspace(data[i], data[i+1], 1024, endpoint=True))
-                
+                self._timestamps_internal = np.append(self._timestamps_internal, np.linspace(data[i], data[i+1], 1024, endpoint=True))
+            
+            self.timestamps = self._timestamps_internal
+
     class Spikes:
         
         def __init__(self, files, recording_index):

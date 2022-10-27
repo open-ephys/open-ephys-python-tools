@@ -187,7 +187,7 @@ def load_continuous(filename, recording_index, start_sample=None, end_sample=Non
     else:
         end = len(sample_numbers)
 
-    return sample_numbers, samples[start:end], header, valid_records
+    return sample_numbers[start:end], samples[start:end], header, valid_records
 
 
 def load_events(filename, recording_index):
