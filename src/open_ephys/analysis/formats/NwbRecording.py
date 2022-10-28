@@ -39,24 +39,37 @@ class NwbRecording(Recording):
         def __init__(self, nwb, dataset):
         
             self.metadata = {}
-            self.metadata['name'] = dataset
-            self.metadata['channel_count'] = nwb['acquisition'][dataset]['data'][()].shape[1]
+            self.metadata['name'] = dataset.split('.')[-1]
+            self.metadata['stream_name'] = dataset.split('.')[-2]
+            self.metadata['num_channels'] = nwb['acquisition'][dataset]['data'][()].shape[1]
 
             self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]
             self.sample_numbers = nwb['acquisition'][dataset]['sync'][()]
-            self.waveforms = nwb['acquisition'][dataset]['data'][()]
+            self.waveforms = nwb['acquisition'][dataset]['data'][()].astype('float64')
+
+            self.waveforms *= (nwb['acquisition'][dataset]['channel_conversion'][0] * 1e6)
     
     class Continuous:
         
         def __init__(self, nwb, dataset):
 
             self.metadata = {}
-            self.metadata['name'] = dataset
-            self.metadata['sample_rate'] = np.around(1 / nwb['acquisition'][dataset]['timestamps'].attrs['interval'], 1)
-            self.metadata['num_channels'] = nwb['acquisition'][dataset]['data'].shape[0]
-            self.metadata['processor_id'] = int(dataset.split('.')[0].split('-')[-1])
-            self.metadata['stream_name'] = dataset.split('.')[-1]
+
+            source_node = dataset.split('.')[0]
+            stream_name = dataset.split('.')[1]
+            source_node_id = int(source_node[-3:])
+            source_node_name = source_node[:-4]
+
+            self.metadata['source_node_id'] = source_node_id
+            self.metadata['source_node_name'] = source_node_name
             
+            self.metadata['stream_name'] = stream_name
+
+            self.metadata['sample_rate'] = np.around(1 / nwb['acquisition'][dataset]['timestamps'].attrs['interval'], 1)
+            self.metadata['num_channels'] = nwb['acquisition'][dataset]['data'].shape[1]
+            self.metadata['bit_volts'] = \
+                    list(nwb['acquisition'][dataset]['channel_conversion'][()] * 1e6)
+
             self.samples = nwb['acquisition'][dataset]['data'][()]
             self.sample_numbers = nwb['acquisition'][dataset]['sync'][()]
             self.timestamps = nwb['acquisition'][dataset]['timestamps'][()]

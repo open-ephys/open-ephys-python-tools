@@ -35,7 +35,23 @@ from open_ephys.analysis.formats.helpers import load, load_continuous
 from open_ephys.analysis.recording import Recording
 
 class OpenEphysRecording(Recording):
-    
+
+    class Spikes:
+        
+        def __init__(self, info, directory, recording_index):
+            
+            self.metadata = {}
+            self.metadata['name'] = info['name']
+            self.metadata['stream_name'] = info['stream_name']
+            
+            self.sample_numbers, self.waveforms, header = \
+                load(os.path.join(directory, info['filename']), recording_index)
+
+            self.waveforms = self.waveforms.astype('float64') * info['bit_volts']
+
+            self.metadata['sample_rate'] = float(header['sampleRate'])
+            self.metadata['num_channels'] = int(info['num_channels'])
+
     class Continuous:
         
         def __init__(self, info, files, recording_index):
@@ -55,11 +71,16 @@ class OpenEphysRecording(Recording):
 
             self.metadata = {}
 
-            self.metadata['stream_name'] = info['stream_name']
             self.metadata['source_node_id'] = info['source_node_id']
             self.metadata['source_node_name'] = info['source_node_name']
+
+            self.metadata['stream_name'] = info['stream_name']
+
             self.metadata['sample_rate'] = info['sample_rate']
+            self.metadata['num_channels'] = len(files)
+
             self.metadata['channel_names'] = info['channel_names']
+            self.metadata['bit_volts'] = info['bit_volts']
 
             self._load_timestamps()
 
@@ -160,39 +181,7 @@ class OpenEphysRecording(Recording):
             
             self.timestamps = self._timestamps_internal
 
-    class Spikes:
-        
-        def __init__(self, files, recording_index):
-            
-            sample_numbers = []
-            waveforms = []
-            electrodes = []
-            
-            self.metadata = {}
-            self.metadata['names'] = []
-            
-            for i, file in enumerate(files):
-            
-                sn, wv, header = load(file, recording_index)
-                
-                sample_numbers.append(sn)
-                waveforms.append(wv)
-                electrodes.append(np.array([i] * len(sn)))
-                
-                self.metadata['names'].append(header['electrode'])
-                
-            self.sample_numbers = np.concatenate(sample_numbers)
-            self.waveforms = np.concatenate(waveforms, axis=0)
-            self.electrodes = np.concatenate(electrodes)
-            
-            order = np.argsort(self.sample_numbers)
-            
-            self.sample_numbers = self.sample_numbers[order]
-            self.waveforms = self.waveforms[order,:,:]
-            self.electrodes = self.electrodes[order]
-
-            self.summary = pd.DataFrame(data = {'sample_numbers' : self.sample_numbers,
-                    'electrode' : self.electrodes})
+   
             
     def __init__(self, directory, experiment_index=0, recording_index=0):
         
@@ -223,31 +212,20 @@ class OpenEphysRecording(Recording):
                 if stream_indexes[ind] == stream_index:
                     files_for_stream.append(os.path.join(self.directory, filename))
 
-            print(stream_info)
-
             self._continuous.append(self.Continuous(stream_info[stream_index], 
                             files_for_stream, 
                             self.recording_index))
         
     def load_spikes(self):
 
-        spike_files, _, _ = self.find_spikes_files()
+        spike_file_info, _, _ = self.find_spikes_files()
 
-        if spike_files:
-            spike_files = [os.path.join(self.directory, filename) for filename in spike_files]
-            self._spikes = self.Spikes(spike_files, self.recording_index)
+        if spike_file_info:
+            self._spikes = []
+            self._spikes.extend([self.Spikes(info, self.directory, self.recording_index) for info in spike_file_info])
         else:
             self._spikes = None
 
-        '''
-        for file_type in ('single electrode','stereotrode', 'tetrode'):
-            print("***Found {} {} ".format(len(self.find_spikes_files(file_type)), file_type))
-        
-        self._spikes = [self.Spikes(self.find_spikes_files(file_type), 
-                                    self.recording_index)
-                        for file_type in ('single electrode','stereotrode', 'tetrode')
-                        if len(self.find_spikes_files(file_type)) > 0]
-        '''
     
     def load_events(self):
         
@@ -307,11 +285,13 @@ class OpenEphysRecording(Recording):
                     info['source_node_name'] = stream.get('source_node_name')
                     info['sample_rate'] = float(stream.get('sample_rate'))
                     info['channel_names'] = []
+                    info['bit_volts'] = []
 
                     for file_index, file in enumerate(stream):
                         if file.tag == 'CHANNEL':
                             continuous_files.append(file.get('filename'))
                             info['channel_names'].append(file.get('name'))
+                            info['bit_volts'].append(float(file.get('bitVolts')))
                             stream_indexes.append(stream_index)
                         elif file.tag == 'TIMESTAMPS':
                             info['timestamps_file'] = os.path.join(self.directory, file.get('filename'))
@@ -325,7 +305,7 @@ class OpenEphysRecording(Recording):
         tree = XmlElementTree.parse(self.experiment_info)
         root = tree.getroot()
 
-        spike_files = []
+        spike_file_info = []
         stream_indexes = []
         unique_stream_indexes = []
 
@@ -335,32 +315,17 @@ class OpenEphysRecording(Recording):
                     unique_stream_indexes.append(stream_index)
                     for file_index, file in enumerate(stream):
                         if file.tag == 'SPIKECHANNEL':
-                            spike_files.append(file.get('filename'))
+                            info = {'filename' : file.get('filename'),
+                                    'name' : file.get('name'),
+                                    'stream_name' : stream.get('name'),
+                                    'source_node_id' : int(stream.get('source_node_id')),
+                                    'source_node_name' : stream.get('source_node_name'),
+                                    'bit_volts' : float(file.get('bitVolts')),
+                                    'num_channels' : int(file.get('num_channels'))}
+                            spike_file_info.append(info)
                             stream_indexes.append(stream_index)
 
-        return spike_files, stream_indexes, unique_stream_indexes
-    
-        '''
-        search_string = {'single electrode' : 'Electrode',
-                         'stereotrode': 'Stereotrode',
-                         'tetrode': 'Tetrode'}    
-    
-        if self.experiment_index == 0:
-            print((os.path.join(self.directory, 
-                                       search_string[file_type] + '*spikes')))
-            f = glob.glob(os.path.join(self.directory, 
-                                       search_string[file_type] + '*spikes'))
-            print("Got spike files: {}".format(f))
-            f.sort()
-            return [name for name in f 
-                    if True]#(os.path.basename(name).find('_') < 0)]
-        else:
-            f = glob.glob(os.path.join(self.directory, search_string[file_type] + 
-                                                       '*' + self.experiment_id + '*spikes'))
-            f.sort()
-            return [name for name in f 
-                    if (os.path.basename(name).split('_')[1].split('.')[0] == str(self.experiment_index + 1))]
-        '''
+        return spike_file_info, stream_indexes, unique_stream_indexes
         
         
     def __str__(self):
