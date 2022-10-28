@@ -84,12 +84,48 @@ class OpenEphysRecording(Recording):
 
             self._load_timestamps()
 
+            self.global_timestamps = None
+
         @property
         def samples(self):
             if self._samples is None or self.reload_required:
                 self._load_samples()
                 self.reload_required = False
             return self._samples
+
+        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None):
+            """
+            Returns samples scaled to microvolts. Converts sample values
+            from 16-bit integers to 64-bit floats.
+
+            Note: if a subset of data has been loaded, all indices are relative to this
+            subset, rather than the original array.
+            
+            Parameters
+            ----------
+            start_sample_index : int
+                Index of the first sample to return
+            end_sample_index : int
+                Index of the last sample to return
+            selected_channels : numpy.ndarray
+                Indices of the channels to return
+                By default, all channels are returned
+
+            Returns
+            -------
+            samples : numpy.ndarray (float64)
+
+            """
+
+            if selected_channels is None:
+                selected_channels = np.arange(self.selected_channels.size)
+
+            samples = self.samples[start_sample_index:end_sample_index, selected_channels].astype('float64')
+
+            for idx, channel in enumerate(selected_channels):
+                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][self.selected_channels[channel]]
+
+            return samples
 
         def set_start_sample(self, start_sample):
             """
