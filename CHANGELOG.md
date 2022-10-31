@@ -1,5 +1,9 @@
 # `open-ephys-python-tools` Changelog
 
+## 0.1.1
+
+- Add logo as link in README so it shows up on PyPI project description
+
 ## 0.1.0 (first release on PyPI)
 
 ### `analysis` module
