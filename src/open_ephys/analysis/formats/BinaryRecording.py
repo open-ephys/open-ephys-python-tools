@@ -36,28 +36,32 @@ class BinaryRecording(Recording):
         
         def __init__(self, info, base_directory, version):
         
+            self.metadata = { }
+
+            self.metadata['name'] = info['name']
+            self.metadata['stream_name'] = info['stream_name']
+            self.metadata['sample_rate'] = info['sample_rate']
+            self.metadata['num_channels'] = info['num_channels']
+            
             if version >= 0.6:
                 directory = os.path.join(base_directory, 'spikes', info['folder'])
                 self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
                 self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
                 self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
-                self.waveforms = np.load(os.path.join(directory, 'waveforms.npy'))
+                self.waveforms = np.load(os.path.join(directory, 'waveforms.npy')).astype('float64')
                 self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
-
-                self.summary = pd.DataFrame(data = {'sample_number' : self.sample_numbers,
-                    'timestamp' : self.timestamps,
-                    'electrode' : self.electrodes,
-                    'cluster' : self.clusters})
 
             else:
                 directory = os.path.join(base_directory, 'spikes', info['folder_name'])
                 self.sample_numbers = np.load(os.path.join(directory, 'spike_times.npy'))
                 self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy')) - 1
-                self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy'))
+                self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy')).astype('float64')
                 self.clusters = np.load(os.path.join(directory, 'spike_clusters.npy'))
 
             if self.waveforms.ndim == 2:
                 self.waveforms = np.expand_dims(self.waveforms, 1)
+
+            self.waveforms *= float(info['source_channels'][0]['bit_volts'])
     
     class Continuous:
         
@@ -68,16 +72,20 @@ class BinaryRecording(Recording):
             self.name = info['folder_name']
 
             self.metadata = {}
-            self.metadata['sample_rate'] = info['sample_rate']
-            self.metadata['num_channels'] = info['num_channels']
-            self.metadata['processor_id'] = info['source_processor_id']
+
+            self.metadata['source_node_id'] = info['source_processor_id']
+            self.metadata['source_node_name'] = info['source_processor_name']
 
             if version >= 0.6:
                 self.metadata['stream_name'] = info['stream_name']
             else:
                 self.metadata['stream_name'] = str(info['source_processor_sub_idx'])
 
+            self.metadata['sample_rate'] = info['sample_rate']
+            self.metadata['num_channels'] = info['num_channels']
+
             self.metadata['channel_names'] = [ch['channel_name'] for ch in info['channels']]
+            self.metadata['bit_volts'] = [ch['bit_volts'] for ch in info['channels']]
             
             if version >= 0.6:
                 self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
@@ -90,6 +98,37 @@ class BinaryRecording(Recording):
                                          self.metadata['num_channels']))
 
             self.global_timestamps = None
+
+        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None):
+            """
+            Returns samples scaled to microvolts. Converts sample values
+            from 16-bit integers to 64-bit floats.
+
+            Parameters
+            ----------
+            start_sample_index : int
+                Index of the first sample to return
+            end_sample_index : int
+                Index of the last sample to return
+            selected_channels : numpy.ndarray
+                Indices of the channels to return
+                By default, all channels are returned
+
+            Returns
+            -------
+            samples : numpy.ndarray (float64)
+
+            """
+
+            if selected_channels is None:
+                selected_channels = np.arange(self.metadata['num_channels'])
+
+            samples = self.samples[start_sample_index:end_sample_index, selected_channels].astype('float64')
+
+            for idx, channel in enumerate(selected_channels):
+                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][channel]
+
+            return samples
     
     def __init__(self, directory, experiment_index=0, recording_index=0):
         

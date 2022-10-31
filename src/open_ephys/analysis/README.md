@@ -67,24 +67,34 @@ Continuous data for each recording is accessed via the `.continuous` property of
 
 Each `continuous` object has four properties:
 
-- `samples` - a `numpy.ndarray` that holds the actual continuous data with dimensions of samples x channels. For Binary, NWB, and Kwik format, this will be a memory-mapped array (i.e., the data will only be loaded into memory when specific samples are accessed)
+- `samples` - a `numpy.ndarray` that holds the actual continuous data with dimensions of samples x channels. For Binary, NWB, and Kwik format, this will be a memory-mapped array (i.e., the data will only be loaded into memory when specific samples are accessed).
 - `sample_numbers` - a `numpy.ndarray` that holds the sample indices. This will have the same size as the first dimension of the `samples` array
 - `timestamps` - a `numpy.ndarray` that holds global timestamps (in seconds) for each sample, assuming all data streams were synchronized in this recording. This will have the same size as the first dimension of the `samples` array
 - `metadata` - a `dict` containing information about this data, such as the ID of the processor it originated from.
 
+Because the memory-mapped samples are stored as 16-bit integers in arbitrary units, all analysis should be done on a scaled version of these samples. To load the samples scaled to microvolts, use the `get_samples()` method:
+
+```python
+>> recording = session.recordnodes[0].recording[0]
+>> data = recording.continuous[0].get_samples(start_sample_index=0, end_sample_index=10000)
+```
+
+This will return the first 10,000 continuous samples for all channels in units of microvolts. Note that your computer may run out of memory when requesting a large number of samples for many channels at once.
+
 ### Using the Open Ephys data format
 
-Because the data files from the Open Ephys format cannot be memory-mapped effectively, all of the samples must be loaded into memory. For long recordings, it may not be possible to load all of the channels at once. Before requesting the `samples` property of a `continuous` object in Open Ephys format, you can uses the following functions to restrict the data to a certain sample range or a certain set of channels:
+Because the data files from the Open Ephys format cannot be memory-mapped effectively, all of the samples must be loaded into memory from the start. For long recordings, it may not be possible to fit all of the channels into memory at once. Before requesting the `samples` property of a `continuous` object in Open Ephys format, you can uses the following functions to restrict the data to a certain sample range or a certain set of channels:
 
 ```python
 >> recording = session.recordnodes[0].recording[0] # loads the sample numbers, timestamps, and metadata
 >> recording.set_sample_range([10000, 50000])
 >> recording.set_selected_channels([np.arange(10,15)])
 >> recording.samples.shape  # loads the samples
-
 (40000, 5)
 
 ```
+
+Subsequent calls to `get_samples()` will use indices relative to the samples that have been loaded, rather than all the samples that are available.
 
 ## Loading event data
 
@@ -104,7 +114,6 @@ If spike data has been saved by your Record Node (i.e., there is a Spike Detecto
 - `waveforms` - `numpy.ndarray` containing spike waveforms, with dimensions of spikes x channels x samples
 - `sample_numbers` - `numpy.ndarray` of sample indices (one per spikes)
 - `timestamps` - `numpy.ndarray` of global timestamps (in seconds)
-- `electrodes` - `numpy.ndarray` containing the index of the electrode from which each spike originated
 - `metadata` - `dict` with metadata about each electrode
 
 ## Synchronizing timestamps

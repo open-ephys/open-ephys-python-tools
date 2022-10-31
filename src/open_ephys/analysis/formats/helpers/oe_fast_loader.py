@@ -170,7 +170,7 @@ def load_continuous(filename, recording_index, start_sample=None, end_sample=Non
     
     first_record = np.min(np.where(valid_records)[0])
     
-    samples = data.flatten()[mask.flatten()] * float(header['bitVolts'])
+    samples = data.flatten()[mask.flatten()]
     
     f = open(filename,'rb')
     start_sample_number = np.fromfile(f, np.dtype('<i8'), count = 1, offset=1024 + first_record * RECORD_SIZE) # little-
@@ -308,8 +308,6 @@ def load_spikes(filename, recording_number):
     waveforms = np.copy(data[mask, 21:-POST_BYTES//2].reshape((np.sum(mask), numChannels, numSamples))).astype('float32')
     
     waveforms -= 32768
-    waveforms /= 20000 # gain 
-    waveforms *= 1000
     
     return sample_numbers, waveforms, header
 
