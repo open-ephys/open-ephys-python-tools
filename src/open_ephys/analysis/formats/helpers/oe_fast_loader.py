@@ -99,7 +99,7 @@ def load(filename, recording_index):
     """
     
     extension = os.path.basename(filename).split('.')[-1]
-    
+
     if extension == 'continuous':
         
         return load_continuous(filename, recording_index)
@@ -115,7 +115,7 @@ def load(filename, recording_index):
     else:
         raise Exception("File extension " + extension + " not recognized")
 
-def load_continuous(filename, recording_index):
+def load_continuous(filename, recording_index, start_sample=None, end_sample=None):
     
     """
     Loads continuous data, using memory mapping to improve performance
@@ -129,11 +129,17 @@ def load_continuous(filename, recording_index):
     
     recording_index - int
         index of the recording (0, 1, 2, etc.)
+
+    start_sample - int
+        first sample to load (if None, load from the beginning of the recording)
+
+    end_sample - int
+        last sample to load (if None, load until the end of the recording)
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N data sample
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N data samples
     
     samples - np.array (N x M)
         Samples for each of M channels
@@ -164,14 +170,24 @@ def load_continuous(filename, recording_index):
     
     first_record = np.min(np.where(valid_records)[0])
     
-    samples = data.flatten()[mask.flatten()] * float(header['bitVolts'])
+    samples = data.flatten()[mask.flatten()]
     
     f = open(filename,'rb')
-    start_timestamp = np.fromfile(f, np.dtype('<i8'), count = 1, offset=1024 + first_record * RECORD_SIZE) # little-
+    start_sample_number = np.fromfile(f, np.dtype('<i8'), count = 1, offset=1024 + first_record * RECORD_SIZE) # little-
     
-    timestamps = np.arange(start_timestamp, start_timestamp + samples.size)
+    sample_numbers = np.arange(start_sample_number, start_sample_number + samples.size)
+
+    if start_sample is not None:
+        start = np.searchsorted(sample_numbers, start_sample)
+    else:
+        start = 0
     
-    return timestamps, samples, header
+    if end_sample is not None:
+        end = np.searchsorted(sample_numbers, end_sample)
+    else:
+        end = len(sample_numbers)
+
+    return sample_numbers[start:end], samples[start:end], header, valid_records
 
 
 def load_events(filename, recording_index):
@@ -191,8 +207,8 @@ def load_events(filename, recording_index):
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N events
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N events
     
     processor_id - np.array (N x 0)
         Processor ID for each of N events
@@ -210,7 +226,7 @@ def load_events(filename, recording_index):
     
     header = readHeader(filename)
 
-    timestamps = np.array(np.memmap(filename, dtype='<i8', offset=1024, mode='r')[::2])
+    sample_numbers = np.array(np.memmap(filename, dtype='<i8', offset=1024, mode='r')[::2])
     
     data = np.memmap(filename, dtype='<u1', offset=1024, mode='r', shape=(len(timestamps), EVENT_RECORD_SIZE //2))
     
@@ -221,7 +237,7 @@ def load_events(filename, recording_index):
     state = np.array(data[mask,12])
     channel = np.array(data[mask,13])
     
-    return timestamps[mask], processor_id, state, channel, header
+    return sample_numbers[mask], processor_id, state, channel, header
 
 
 def load_spikes(filename, recording_number):
@@ -241,8 +257,8 @@ def load_spikes(filename, recording_number):
         
     Output:
     ======
-    timestamps - np.array (N x 0)
-        Timestamps for each of N spikes
+    sample_numbers - np.array (N x 0)
+        Sample numbers for each of N spikes
     
     waveforms - np.array (N x channels x samples)
         Waveforms for each spike
@@ -271,13 +287,13 @@ def load_spikes(filename, recording_number):
     f = open(filename,'rb')
     numSpikes = (os.fstat(f.fileno()).st_size - NUM_HEADER_BYTES) // SPIKE_RECORD_SIZE
 
-    timestamps = np.zeros((numSpikes,), dtype='<i8')
+    sample_numbers = np.zeros((numSpikes,), dtype='<i8')
     
     f.seek(NUM_HEADER_BYTES + 1)
     
-    for i in range(len(timestamps)):
+    for i in range(len(sample_numbers)):
         
-        timestamps[i] = np.fromfile(f, np.dtype('<i8'), 1)
+        sample_numbers[i] = np.fromfile(f, np.dtype('<i8'), 1)
         f.seek(NUM_HEADER_BYTES + 1 + SPIKE_RECORD_SIZE * i)
     
 
@@ -286,12 +302,12 @@ def load_spikes(filename, recording_number):
                      offset = NUM_HEADER_BYTES) 
     
     mask = data[:,-1] == recording_number
+
+    sample_numbers = np.copy(sample_numbers[mask])
  
     waveforms = np.copy(data[mask, 21:-POST_BYTES//2].reshape((np.sum(mask), numChannels, numSamples))).astype('float32')
     
     waveforms -= 32768
-    waveforms /= 20000 # gain 
-    waveforms *= 1000
     
-    return timestamps, waveforms, header
+    return sample_numbers, waveforms, header
 

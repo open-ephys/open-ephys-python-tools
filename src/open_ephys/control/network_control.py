@@ -28,7 +28,7 @@ import time
 class NetworkControl:
     
     """
-    A class that communicates with the Open Ephys NetworkEvents plugin
+    A class that communicates with the Open Ephys GUI's "Network Events" plugin
     
     See: https://github.com/open-ephys-plugins/NetworkEvents for more info.
     
@@ -38,7 +38,8 @@ class NetworkControl:
     
     To use, first create a NetworkControl object:
         
-        >> gui = NetworkControl()
+        >> from open_ephys.control import NetworkControl
+        >> gui = NetworkControl()  # defaults to localhost
         
     Then, change or query the GUI's state via object properties and methods:
         
@@ -54,7 +55,7 @@ class NetworkControl:
         >> gui.is_recording
         True
         
-        >> gui.send_ttl(channel = 5, state = 1)
+        >> gui.send_ttl(line = 5, state = 1)
         Response: TTLHandled: Channel=5 on=1
         
         >> gui.stop
@@ -126,21 +127,21 @@ class NetworkControl:
         self.socket.send_string('IsAcquiring')
         return self.socket.recv().decode('utf-8') == "1"
         
-    def send_ttl(self, channel=1, state=1):
+    def send_ttl(self, line=1, state=1):
         """Trigger a TTL event
         
          Parameters
         ----------
-        channel : int
-            Channel number (1-8)
+        line : int
+            TTL line number (1-256)
         state : int or bool
             Event state (on = 1/True, off = 0/False)
         
         """
         if state:
-            self.socket.send_string('TTL Channel=' + str(channel) + " on=1")
+            self.socket.send_string('TTL Line=' + str(channel) + " on=1")
         else:
-            self.socket.send_string('TTL Channel ' + str(channel) + " on=0")
+            self.socket.send_string('TTL Line=' + str(channel) + " on=0")
         self._get_response()
         
     def wait(self, time_in_seconds):
@@ -159,29 +160,3 @@ class NetworkControl:
     def _get_response(self):
         print('Response: ' + self.socket.recv().decode('utf-8'))
 
-    #@property
-    # NO LONGER IMPLEMENTED IN GUI
-    #def record_to_new_directory(self):
-    #    self.socket.send_string('StartRecord CreateNewDir=1')
-    #    self.get_response()
-    #
-      
-    # NO LONGER IMPLEMENTED IN GUI
-    #def get_recording_path(self):
-    #   self.socket.send_string('GetRecordingPath')
-    #   return self.socket.recv().decode('utf-8')
-
-    # Some additional commands:
-    #
-    #start_cmd = 'StartRecord'
-    #
-    #rec_dir = os.path.join(os.getcwd(), 'Output_RecordControl')
-    #
-    #commands = [start_cmd + ' RecDir=%s' % rec_dir,
-    #            start_cmd + ' PrependText=Session01 AppendText=Condition01',
-    #            start_cmd + ' PrependText=Session01 AppendText=Condition02',
-    #            start_cmd + ' PrependText=Session02 AppendText=Condition01',
-    #            start_cmd,
-    #            start_cmd + ' CreateNewDir=1']
-    
-# %%

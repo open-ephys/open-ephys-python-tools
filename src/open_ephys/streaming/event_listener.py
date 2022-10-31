@@ -35,7 +35,7 @@ def default_spike_callback(info):
 
     """
 
-    print(info)
+    return
 
 def default_ttl_callback(info):
     """
@@ -47,7 +47,7 @@ def default_ttl_callback(info):
 
     """
 
-    print(info)
+    return
 
 
 class EventListener:
@@ -60,8 +60,7 @@ class EventListener:
     
     It can be used to receive TTL events and spike times over a network connection.
 
-    IMPORTANT: The Event Broadcaster must be configured to send events in 
-    "Header/JSON" format.
+    IMPORTANT: The Event Broadcaster must be configured to send events in "JSON" format.
     
     To use, first create a EventBroadcaster object:
         
@@ -80,7 +79,6 @@ class EventListener:
     
     """
 
-
     def __init__(self, ip_address = '127.0.0.1',
                  port = 5557):
         
@@ -93,19 +91,18 @@ class EventListener:
             Defaults to localhost
         port : int
             The port of the Event Broadcaster plugin to be controlled
-            Default to 5557
+            Defaults to 5557
         
         """
         
         self.url = "tcp://%s:%d" % (ip_address, port)
-        
+
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
         self.socket.connect(self.url)
+        self.socket.setsockopt(zmq.SUBSCRIBE, b'')
 
-        for eventType in (b'ttl', b'spike'):
-            self.socket.setsockopt(zmq.SUBSCRIBE, eventType)
-
+        print("Initialized EventListener at " + self.url)
 
 
     def start(self, 
@@ -126,16 +123,20 @@ class EventListener:
 
         """
 
+        print("Starting EventListener")
+
         while True:
             try:
                 parts = self.socket.recv_multipart()
 
-                info = json.loads(parts[1].decode('utf-8'))
+                if len(parts) == 2:
 
-                if info['type'] == 'spike':
-                    spike_callback(info)
-                else:
-                    ttl_callback(info)
+                    info = json.loads(parts[1].decode('utf-8'))
+
+                    if info['event_type'] == 'spike':
+                        spike_callback(info)
+                    else:
+                        ttl_callback(info)
 
             except KeyboardInterrupt:
                 print()  # Add final newline

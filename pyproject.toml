@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "open-ephys-python-tools"
+description = "Software tools for interfacing with the Open Ephys GUI"
+license = {text = "MIT"}
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+readme = "README.md"
+
+dynamic = ["version"]
+
+dependencies = [
+    'numpy',
+    'pandas',
+    'h5py',
+    'zmq',
+    'requests'
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "open_ephys.__version__"}
+
+
