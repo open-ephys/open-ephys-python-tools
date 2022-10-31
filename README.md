@@ -4,7 +4,7 @@
 
 ## Overview
 
-This repository is meant to centralize and standardize Python-specific tools for interacting with the [Open Ephys GUI](https://github.com/open-ephys/plugin-GUI).
+This package centralizes and standardizes Python-specific tools for interacting with the [Open Ephys GUI](https://github.com/open-ephys/plugin-GUI).
 
 It consists of three modules:
 
