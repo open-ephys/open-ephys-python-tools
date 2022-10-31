@@ -1,6 +1,6 @@
 # Open Ephys Python Tools
 
-<img src="logo.png" width="300" />
+<img src="https://user-images.githubusercontent.com/200366/199058390-f18efb8e-9012-4efe-b32d-309ef92b730d.png" width="300" />
 
 ## Overview
 
