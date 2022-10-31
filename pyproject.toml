@@ -12,8 +12,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+readme = "README.md"
 
-dynamic = ["version", "readme"]
+dynamic = ["version"]
 
 dependencies = [
     'numpy',
@@ -28,4 +29,5 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = {attr = "open_ephys.__version__"}
-readme = {file = ["README.md"]}
+
+
