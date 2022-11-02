@@ -62,9 +62,9 @@ class EventListener:
 
     IMPORTANT: The Event Broadcaster must be configured to send events in "JSON" format.
     
-    To use, first create a EventBroadcaster object:
+    To use, first create an EventListener object:
         
-        >> stream = EventBroadcaster()
+        >> stream = EventListener()
         
     Then, define a callback function for TTL events, spikes, or both:
         
@@ -82,7 +82,7 @@ class EventListener:
     def __init__(self, ip_address = '127.0.0.1',
                  port = 5557):
         
-        """ Construct an EventBroadcaster object
+        """ Construct an EventListener object
 
         Parameters
         ----------
