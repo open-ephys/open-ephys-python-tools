@@ -139,9 +139,9 @@ class NetworkControl:
         
         """
         if state:
-            self.socket.send_string('TTL Line=' + str(channel) + " on=1")
+            self.socket.send_string('TTL Line=' + str(line) + " State=1")
         else:
-            self.socket.send_string('TTL Line=' + str(channel) + " on=0")
+            self.socket.send_string('TTL Line=' + str(line) + " State=0")
         self._get_response()
         
     def wait(self, time_in_seconds):

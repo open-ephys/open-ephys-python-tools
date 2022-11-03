@@ -1,5 +1,11 @@
 # `open-ephys-python-tools` Changelog
 
+## 0.1.2
+
+- Fix bug in sending TTLs when using NetworkControl object
+- Fix docstring for EventListener class
+- Use absolute URLs in README, so the links work on PyPI site
+
 ## 0.1.1
 
 - Add logo as link in README so it shows up on PyPI project description

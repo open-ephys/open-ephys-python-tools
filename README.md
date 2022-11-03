@@ -8,11 +8,11 @@ This package centralizes and standardizes Python-specific tools for interacting 
 
 It consists of three modules:
 
-1. [`analysis`](src/open_ephys/analysis) - loads data in every format supported by the GUI, using a common interface
+1. [`analysis`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/analysis) - loads data in every format supported by the GUI, using a common interface
 
-2. [`control`](src/open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
+2. [`control`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/control) - allows a Python process to control the GUI, locally or over a network connection
 
-3. [`streaming`](src/open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization
+3. [`streaming`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/streaming) - receives data from the GUI for real-time analysis and visualization
 
 ## Installation
 
@@ -37,7 +37,7 @@ $ pip install -e .
 
 ## Usage
 
-### [`analysis`](src/open_ephys/analysis)
+### [`analysis`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/analysis)
 
 ```python
 
@@ -63,9 +63,9 @@ Each `recording` object has the following fields:
 * `spikes` : spikes for each electrode group
 * `events` : Pandas `DataFrame` of event times and metadata
 
-More details about `continuous`, `spikes`, and `events` objects can be found in the [analysis module README file](src/open_ephys/analysis/README.md).
+More details about `continuous`, `spikes`, and `events` objects can be found in the [analysis module README file](https://github.com/open-ephys/open-ephys-python-tools/blob/main/src/open_ephys/analysis/README.md).
 
-### [`control`](src/open_ephys/control)
+### [`control`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/control)
 
 First, launch an instance of the Open Ephys GUI (version `0.6.0` or higher).
 
@@ -83,9 +83,9 @@ gui.acquire(10) # acquire data for 10 seconds
 
 ```
 
-More details about available commands can be found in the [control module README file](src/open_ephys/control/README.md).
+More details about available commands can be found in the [control module README file](https://github.com/open-ephys/open-ephys-python-tools/blob/main/src/open_ephys/control/README.md).
 
-### [`streaming`](src/open_ephys/streaming)
+### [`streaming`](https://github.com/open-ephys/open-ephys-python-tools/tree/main/src/open_ephys/streaming)
 
 First, launch an instance of the Open Ephys GUI and make sure an [Event Broadcaster](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html) plugin is in the signal chain.
 
@@ -125,7 +125,7 @@ stream.start(ttl_callback=ttl_callback)
 
 ...and press `ctrl-C` to stop the process.
 
-More details about available commands can be found in the [streaming module README file](src/open_ephys/streaming/README.md).
+More details about available commands can be found in the [streaming module README file](https://github.com/open-ephys/open-ephys-python-tools/blob/main/src/open_ephys/streaming/README.md).
 
 ## Contributing
 
