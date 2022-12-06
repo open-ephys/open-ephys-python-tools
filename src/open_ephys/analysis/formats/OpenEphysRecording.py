@@ -66,7 +66,7 @@ class OpenEphysRecording(Recording):
             self.reload_required = False
             self._samples = None
             self.sample_numbers = self._sample_numbers_internal
-            self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1]]
+            self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1]+1]
             self.selected_channels = np.arange(len(files))
 
             self.metadata = {}
