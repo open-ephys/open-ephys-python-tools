@@ -229,7 +229,7 @@ class Recording(ABC):
                             'sync channel.')
             
         main = main[0]
-            
+
         main_events = self.events[(self.events.line == main['line']) & 
                    (self.events.processor_id == main['processor_id']) & 
                    (self.events.stream_index == main['stream_index']) &
@@ -241,16 +241,16 @@ class Recording(ABC):
         main['scaling'] = 1
         main['offset'] = main_start_sample
         
-        for continuous in self.continuous:
+        for idx, continuous in enumerate(self.continuous):
 
-            if (continuous.metadata['processor_id'] == main['processor_id']) and \
-               (continuous.metadata['stream_index'] == main['stream_index']):
+            if (continuous.metadata['source_node_id'] == main['processor_id']) and \
+               (idx == main['stream_index']):
                main['sample_rate'] = continuous.metadata['sample_rate']
         
         for aux in aux_channels:
             
-            aux_events = self.events[(self.events.channel == aux['line']) & 
-                   (self.events.processor_id == aux['processor_id']) & 
+            aux_events = self.events[(self.events.line == aux['line']) &
+                   (self.events.processor_id == aux['processor_id']) &
                    (self.events.stream_index == aux['stream_index']) &
                    (self.events.state == 1)]
             
@@ -264,10 +264,10 @@ class Recording(ABC):
 
         for sync in self.sync_lines:
             
-            for continuous in self.continuous:
+            for idx, continuous in enumerate(self.continuous):
 
-                if (continuous.metadata['processor_id'] == sync['processor_id']) and \
-                   (continuous.metadata['stream_index'] == sync['stream_index']):
+                if (continuous.metadata['source_node_id'] == sync['processor_id']) and \
+                   (idx == sync['stream_index']):
                        
                     continuous.global_timestamps = \
                         ((continuous.sample_numbers - sync['start']) * sync['scaling'] \
@@ -278,7 +278,7 @@ class Recording(ABC):
                             
             event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
                    (self.events.stream_index == sync['stream_index'])].index.values
-            
+
             global_timestamps = (self.events.loc[event_inds].sample_number - sync['start']) \
                                   * sync['scaling'] \
                                    + sync['offset']
@@ -286,6 +286,9 @@ class Recording(ABC):
             if self.format != 'nwb': #already scaled to seconds
                 global_timestamps = global_timestamps / sync['sample_rate']
             
+            print(self.events)
+            print(event_inds)
+            print(global_timestamps)
             self.events.at[event_inds, 'global_timestamp'] = global_timestamps
             
             
