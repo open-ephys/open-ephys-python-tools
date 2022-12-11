@@ -286,10 +286,11 @@ class Recording(ABC):
             if self.format != 'nwb': #already scaled to seconds
                 global_timestamps = global_timestamps / sync['sample_rate']
             
-            print(self.events)
-            print(event_inds)
-            print(global_timestamps)
-            self.events.at[event_inds, 'global_timestamp'] = global_timestamps
+            #print(self.events)
+            #print(event_inds)
+            #print(global_timestamps)
+            for ind, ts in zip(event_inds, global_timestamps):
+                self.events.at[ind, 'global_timestamp'] = ts
             
             
                             
