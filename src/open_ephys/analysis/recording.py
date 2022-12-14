@@ -162,7 +162,7 @@ class Recording(ABC):
         """Returns a string with information about the Recording"""
         pass
     
-    def add_sync_line(self, line, processor_id, stream_index=0, main=False):
+    def add_sync_line(self, line, processor_id, stream_name=0, main=False):
         """Specifies an event channel to use for timestamp synchronization. Each 
         sync line in a recording should receive its input from the same 
         physical digital input line.
@@ -195,7 +195,7 @@ class Recording(ABC):
                 
         matching_node = [sync for sync in self.sync_lines 
                          if sync['processor_id'] == processor_id and
-                            sync['stream_index'] == stream_index]
+                            sync['stream_name'] == stream_name]
         
         if len(matching_node) == 1:
             self.sync_lines.remove(matching_node[0])
@@ -203,7 +203,7 @@ class Recording(ABC):
         
         self.sync_lines.append({'line' : line,
                                 'processor_id' : processor_id,
-                                'stream_index' : stream_index,
+                                'stream_name' : stream_name,
                                 'main' : main})
         
     def compute_global_timestamps(self):
@@ -232,7 +232,7 @@ class Recording(ABC):
 
         main_events = self.events[(self.events.line == main['line']) & 
                    (self.events.processor_id == main['processor_id']) & 
-                   (self.events.stream_index == main['stream_index']) &
+                   (self.events.stream_name == main['stream_name']) &
                    (self.events.state == 1)]
         
         main_start_sample = main_events.iloc[0].sample_number
@@ -241,17 +241,17 @@ class Recording(ABC):
         main['scaling'] = 1
         main['offset'] = main_start_sample
         
-        for idx, continuous in enumerate(self.continuous):
+        for continuous in self.continuous:
 
             if (continuous.metadata['source_node_id'] == main['processor_id']) and \
-               (idx == main['stream_index']):
+               (continuous.metadata['stream_name'] == main['stream_name']):
                main['sample_rate'] = continuous.metadata['sample_rate']
         
         for aux in aux_channels:
             
             aux_events = self.events[(self.events.line == aux['line']) &
                    (self.events.processor_id == aux['processor_id']) &
-                   (self.events.stream_index == aux['stream_index']) &
+                   (self.events.stream_name == aux['stream_name']) &
                    (self.events.state == 1)]
             
             aux_start_sample = aux_events.iloc[0].sample_number
@@ -264,10 +264,10 @@ class Recording(ABC):
 
         for sync in self.sync_lines:
             
-            for idx, continuous in enumerate(self.continuous):
+            for continuous in self.continuous:
 
                 if (continuous.metadata['source_node_id'] == sync['processor_id']) and \
-                   (idx == sync['stream_index']):
+                   (continuous.metadata['stream_name'] == main['stream_name']):
                        
                     continuous.global_timestamps = \
                         ((continuous.sample_numbers - sync['start']) * sync['scaling'] \
@@ -277,7 +277,7 @@ class Recording(ABC):
                         continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate']
                             
             event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
-                   (self.events.stream_index == sync['stream_index'])].index.values
+                   (self.events.stream_name == sync['stream_name'])].index.values
 
             global_timestamps = (self.events.loc[event_inds].sample_number - sync['start']) \
                                   * sync['scaling'] \
@@ -286,9 +286,6 @@ class Recording(ABC):
             if self.format != 'nwb': #already scaled to seconds
                 global_timestamps = global_timestamps / sync['sample_rate']
             
-            #print(self.events)
-            #print(event_inds)
-            #print(global_timestamps)
             for ind, ts in zip(event_inds, global_timestamps):
                 self.events.at[ind, 'global_timestamp'] = ts
             
