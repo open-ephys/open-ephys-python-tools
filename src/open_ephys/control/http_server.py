@@ -552,6 +552,24 @@ class OpenEphysHTTPServer:
         
         return data['mode']
 
+    def message(self, message):
+
+        """
+        Broadcast a message to all processors during acquisition
+
+        Parameters
+        ----------
+        message : String
+            The message to send.
+        """
+
+        payload = {
+            'text' : message
+        }
+        data = self.send('/api/message', payload)
+
+        return data
+
     def quit(self):
 
         """

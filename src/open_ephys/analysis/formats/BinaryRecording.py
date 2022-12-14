@@ -175,7 +175,7 @@ class BinaryRecording(Recording):
             
             node_name = os.path.basename(os.path.dirname(events_directory)).split('.')
             node = node_name[0]
-            nodeId = node.split("-")[-1]
+            nodeId = int(node.split("-")[-1])
             stream = ''.join(node_name[1:])
             
             streamIdx += 1
