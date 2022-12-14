@@ -45,18 +45,18 @@ class BinaryRecording(Recording):
             
             if version >= 0.6:
                 directory = os.path.join(base_directory, 'spikes', info['folder'])
-                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
-                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
-                self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy')) - 1
+                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode='r')
+                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
+                self.electrodes = np.load(os.path.join(directory, 'electrode_indices.npy'), mmap_mode='r') - 1
                 self.waveforms = np.load(os.path.join(directory, 'waveforms.npy')).astype('float64')
-                self.clusters = np.load(os.path.join(directory, 'clusters.npy'))
+                self.clusters = np.load(os.path.join(directory, 'clusters.npy'), mmap_mode='r')
 
             else:
                 directory = os.path.join(base_directory, 'spikes', info['folder_name'])
-                self.sample_numbers = np.load(os.path.join(directory, 'spike_times.npy'))
-                self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy')) - 1
+                self.sample_numbers = np.load(os.path.join(directory, 'spike_times.npy'), mmap_mode='r')
+                self.electrodes = np.load(os.path.join(directory, 'spike_electrode_indices.npy'), mmap_mode='r') - 1
                 self.waveforms = np.load(os.path.join(directory, 'spike_waveforms.npy')).astype('float64')
-                self.clusters = np.load(os.path.join(directory, 'spike_clusters.npy'))
+                self.clusters = np.load(os.path.join(directory, 'spike_clusters.npy'), mmap_mode='r')
 
             if self.waveforms.ndim == 2:
                 self.waveforms = np.expand_dims(self.waveforms, 1)
@@ -88,10 +88,10 @@ class BinaryRecording(Recording):
             self.metadata['bit_volts'] = [ch['bit_volts'] for ch in info['channels']]
             
             if version >= 0.6:
-                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'))
-                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'))
+                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode='r')
+                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
             else:
-                self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'))
+                self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
 
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
