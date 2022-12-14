@@ -1,5 +1,11 @@
 # `open-ephys-python-tools` Changelog
 
+## 0.1.3
+
+- Fix bug in loading sample numbers with Open Ephys format (last value was previously truncated)
+- Load Binary format timestamps and sample numbers as memory-mapped arrays
+- Update global timestamp synchronization to use latest naming conventions
+
 ## 0.1.2
 
 - Fix bug in sending TTLs when using NetworkControl object
