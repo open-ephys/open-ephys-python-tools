@@ -1,5 +1,10 @@
 # `open-ephys-python-tools` Changelog
 
+## 0.1.4
+
+- Include `source_processor_id` and `source_processor_name` when writing .oebin file
+- If sample numbers are not available in a Binary format `continuous` folder, create default values
+
 ## 0.1.3
 
 - Fix bug in loading sample numbers with Open Ephys format (last value was previously truncated)

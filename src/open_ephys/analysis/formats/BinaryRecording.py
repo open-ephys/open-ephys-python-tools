@@ -86,16 +86,20 @@ class BinaryRecording(Recording):
 
             self.metadata['channel_names'] = [ch['channel_name'] for ch in info['channels']]
             self.metadata['bit_volts'] = [ch['bit_volts'] for ch in info['channels']]
-            
-            if version >= 0.6:
-                self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode='r')
-                self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
-            else:
-                self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
 
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
             self.samples = data.reshape((len(data) // self.metadata['num_channels'], 
                                          self.metadata['num_channels']))
+
+            try:
+                if version >= 0.6:
+                    self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode='r')
+                    self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
+                else:
+                    self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
+            except FileNotFoundError as e:
+                if os.path.basename(e.filename) == 'sample_numbers.npy':
+                    self.sample_numbers = np.arange(self.samples.shape[0])
 
             self.global_timestamps = None
 
@@ -146,8 +150,8 @@ class BinaryRecording(Recording):
             
             try:
                 c = self.Continuous(info, self.directory, self._version)
-            except FileNotFoundError:
-                pass
+            except FileNotFoundError as e:
+                print(info["folder_name"] + " missing file: '" + os.path.basename(e.filename) + "'")
             else:
                 self._continuous.append(c)
             
@@ -309,7 +313,9 @@ class BinaryRecording(Recording):
         stream_name="example_data",
         channel_count=16,
         sample_rate=30000.,
-        bit_volts=0.195):
+        bit_volts=0.195,
+        source_processor_name=None,
+        source_processor_id=100):
 
         """
         Generates structure.oebin (JSON) file for one data stream
@@ -342,16 +348,25 @@ class BinaryRecording(Recording):
             samples rate of the .dat file
         bit_volts : float
             scaling factor required to convert int16 values in to µV
+        source_processor_name : string
+            name of the processor that generated this data (optional)
+        source_processor_id : string
+            3-digit identifier of the processor that generated this data (optional)
         
         """
 
         output = dict()
         output["GUI version"] = "0.6.0"
+
+        if source_processor_name is None:
+            source_processor_name = stream_name
         
         output["continuous"] = [{
             "folder_name" : stream_name,
             "sample_rate" : sample_rate,
             "stream_name" : stream_name,
+            "source_processor_id" : source_processor_id,
+            "source_processor_name" : stream_name,
             "num_channels" : channel_count,
             "channels": [{
                     "channel_name" : "CH" + str(i+1),
