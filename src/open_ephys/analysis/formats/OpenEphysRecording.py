@@ -208,12 +208,13 @@ class OpenEphysRecording(Recording):
 
         def _load_timestamps(self):
 
-            data = np.array(np.memmap(self.timestamps_file, dtype='<f8', offset=0, mode='r'))[self.valid_records]
+            data = np.memmap(self.timestamps_file, dtype='<f8', offset=0, mode='r')[self.valid_records]
             data = np.append(data, 2 * data[-1] - data[-2])
 
-            self._timestamps_internal = np.array([])
+            self._timestamps_internal = []
+
             for i in range(len(data)-1):
-                self._timestamps_internal = np.append(self._timestamps_internal, np.linspace(data[i], data[i+1], 1024, endpoint=True))
+                self._timestamps_internal.extend(np.linspace(data[i], data[i+1], 1024, endpoint=True))
             
             self.timestamps = self._timestamps_internal
 
