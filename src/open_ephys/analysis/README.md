@@ -50,7 +50,7 @@ To view information about a specific recording
 Note that Open Ephys starts numbering experiments and recordings at 1, but the `Recording` object stores the zero-based indices:
 
 ```
->> print(session.recordnodes[0].recording[0])
+>> print(session.recordnodes[0].recordings[0])
 
 Open Ephys GUI Recording
 ID: 0x7fe5c80babb0
@@ -75,7 +75,7 @@ Each `continuous` object has four properties:
 Because the memory-mapped samples are stored as 16-bit integers in arbitrary units, all analysis should be done on a scaled version of these samples. To load the samples scaled to microvolts, use the `get_samples()` method:
 
 ```python
->> recording = session.recordnodes[0].recording[0]
+>> recording = session.recordnodes[0].recordings[0]
 >> data = recording.continuous[0].get_samples(start_sample_index=0, end_sample_index=10000)
 ```
 
@@ -86,7 +86,7 @@ This will return the first 10,000 continuous samples for all channels in units o
 Because the data files from the Open Ephys format cannot be memory-mapped effectively, all of the samples must be loaded into memory from the start. For long recordings, it may not be possible to fit all of the channels into memory at once. Before requesting the `samples` property of a `continuous` object in Open Ephys format, you can uses the following functions to restrict the data to a certain sample range or a certain set of channels:
 
 ```python
->> recording = session.recordnodes[0].recording[0] # loads the sample numbers, timestamps, and metadata
+>> recording = session.recordnodes[0].recordings[0] # loads the sample numbers, timestamps, and metadata
 >> recording.set_sample_range([10000, 50000])
 >> recording.set_selected_channels([np.arange(10,15)])
 >> recording.samples.shape  # loads the samples
@@ -125,7 +125,7 @@ Assuming they each have one event channel that was connected to the same _physic
 First, indicate which event lines share the sync input (this will depend on your recording configuration):
 
 ```python
-recording = session.recordnodes[0].recording[0]
+recording = session.recordnodes[0].recordings[0]
 
 recording.add_sync_line(8,          # TTL line number
                         102,        # processor ID
