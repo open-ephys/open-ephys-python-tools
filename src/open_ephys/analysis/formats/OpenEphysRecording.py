@@ -71,7 +71,7 @@ class OpenEphysRecording(Recording):
 
             self.metadata = {}
 
-            self.metadata['source_node_id'] = info['source_node_id']
+            self.metadata['source_node_id'] = int(info['source_node_id'])
             self.metadata['source_node_name'] = info['source_node_name']
 
             self.metadata['stream_name'] = info['stream_name']
