@@ -273,8 +273,7 @@ class Recording(ABC):
                         ((continuous.sample_numbers - sync['start']) * sync['scaling'] \
                             + sync['offset']) 
                             
-                    if self.format != 'nwb': # already scaled to seconds
-                        continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate']
+                    continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate'] / sync['scaling']
                             
             event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
                    (self.events.stream_name == sync['stream_name'])].index.values
@@ -283,8 +282,7 @@ class Recording(ABC):
                                   * sync['scaling'] \
                                    + sync['offset']
                                    
-            if self.format != 'nwb': #already scaled to seconds
-                global_timestamps = global_timestamps / sync['sample_rate']
+            global_timestamps = global_timestamps / sync['sample_rate']
             
             for ind, ts in zip(event_inds, global_timestamps):
                 self.events.at[ind, 'global_timestamp'] = ts
