@@ -287,7 +287,7 @@ class OpenEphysRecording(Recording):
                               'stream_name' : [stream_name] * len(sample_number),
                               'state' : state}))
 
-        self._events = pd.concat(events).sort_values(by='sample_number')
+        self._events = pd.concat(events).sort_values(by=['sample_number', 'stream_index'], ignore_index=True)
 
     def load_messages(self):
         

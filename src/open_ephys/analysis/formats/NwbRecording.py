@@ -165,9 +165,7 @@ class NwbRecording(Recording):
                             'stream_index' : [stream_id] * len(channel_states),
                             'stream_name' : [stream_name] * len(channel_states),
                             'state' : (np.sign(channel_states) + 1 / 2).astype('int')}))
-        
-        self._events = pd.concat(events)
-        self._events.sort_values(by='timestamp')
+        self._events = pd.concat(events).sort_values(by=['sample_number', 'stream_index'], ignore_index=True)
 
     def load_messages(self):
         pass
