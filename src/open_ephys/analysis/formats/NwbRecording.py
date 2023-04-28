@@ -177,7 +177,7 @@ class NwbRecording(Recording):
         
         return "Open Ephys GUI Recording\n" + \
                 "ID: " + hex(id(self)) + '\n' + \
-                "Format: NWB 1.0\n" + \
+                "Format: NWB 2.0\n" + \
                 "Directory: " + self.directory + "\n" + \
                 "Experiment Index: " + str(self.experiment_index) + "\n" + \
                 "Recording Index: " + str(self.recording_index)
