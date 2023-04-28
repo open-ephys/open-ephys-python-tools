@@ -276,6 +276,7 @@ class OpenEphysRecording(Recording):
                 for stream_index, stream in enumerate(child):
                     for file_index, file in enumerate(stream):
                         if file.tag == 'EVENTS':
+                            stream_name = file.get('filename').replace('_','.').split('.')[1]
                             sample_number, processor_id, state, channel, header = \
                                 load(os.path.join(self.directory, 
                                       file.get('filename')), self.recording_index)
@@ -283,6 +284,7 @@ class OpenEphysRecording(Recording):
                               'sample_number' : sample_number,
                               'processor_id' : processor_id,
                               'stream_index' : [stream_index] * len(sample_number),
+                              'stream_name' : [stream_name] * len(sample_number),
                               'state' : state}))
 
         self._events = pd.concat(events).sort_values(by='sample_number')
