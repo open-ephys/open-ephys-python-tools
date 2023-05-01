@@ -162,7 +162,7 @@ class Recording(ABC):
         """Returns a string with information about the Recording"""
         pass
     
-    def add_sync_line(self, line, processor_id, stream_name=0, main=False):
+    def add_sync_line(self, line, processor_id, stream_name, main=False):
         """Specifies an event channel to use for timestamp synchronization. Each 
         sync line in a recording should receive its input from the same 
         physical digital input line.
@@ -176,9 +176,8 @@ class Recording(ABC):
             event channel number
         processor_id : int
             ID for the processor receiving sync events
-        stream_index : int
-            index of the stream receiving sync events
-            default = 0
+        stream_name : str
+            name of the stream receiving sync events
         main : bool
             if True, this stream's timestamps will be treated as the 
             main clock
