@@ -127,20 +127,20 @@ First, indicate which event lines share the sync input (this will depend on your
 ```python
 recording = session.recordnodes[0].recordings[0]
 
-recording.add_sync_line(8,          # TTL line number
-                        102,        # processor ID
-                        0,          # stream index (defaults to 0)
-                        main=True)  # use as the main stream
+recording.add_sync_line(8,            # TTL line number
+                        102,          # processor ID
+                        'Probe-A-AP', # stream name
+                        main=True)    # use as the main stream
 
-recording.add_sync_line(1,          # TTL line number
-                        100,        # processor ID
-                        0,          # stream index (defaults to 0)
-                        main=False) # align to the main stream
+recording.add_sync_line(1,            # TTL line number
+                        100,          # processor ID
+                        'Probe-A-LFP',# stream name
+                        main=False)   # align to the main stream
 
-recording.add_sync_line(1,          # TTL line number
-                        100,        # processor ID
-                        1,          # stream index (defaults to 0)
-                        main=False) # align to the main stream
+recording.add_sync_line(1,            # TTL line number
+                        100,          # processor ID
+                        'PXI-6133',   # stream name
+                        main=False)   # align to the main stream
 ```
 
 You must have one and only one "main" stream, and at least one "auxiliary" stream for synchronization to work.
