@@ -228,7 +228,7 @@ def load_events(filename, recording_index):
 
     sample_numbers = np.array(np.memmap(filename, dtype='<i8', offset=1024, mode='r')[::2])
     
-    data = np.memmap(filename, dtype='<u1', offset=1024, mode='r', shape=(len(timestamps), EVENT_RECORD_SIZE //2))
+    data = np.memmap(filename, dtype='<u1', offset=1024, mode='r', shape=(len(sample_numbers), EVENT_RECORD_SIZE //2))
     
     recording_number = np.array(data[:,14])
     

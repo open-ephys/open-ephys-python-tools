@@ -144,6 +144,7 @@ class NwbRecording(Recording):
             if (dataset[-4:] == '.TTL'):
 
                 processor_id = int(dataset.split('.')[0].split('-')[1])
+                stream_name = dataset.split('.')[1]
 
                 if processor_id not in processor_ids:
                     processor_ids.append(processor_id)
@@ -162,10 +163,9 @@ class NwbRecording(Recording):
                             'sample_number' : sample_numbers,
                             'processor_id' : [processor_id] * len(channel_states),
                             'stream_index' : [stream_id] * len(channel_states),
+                            'stream_name' : [stream_name] * len(channel_states),
                             'state' : (np.sign(channel_states) + 1 / 2).astype('int')}))
-        
-        self._events = pd.concat(events)
-        self._events.sort_values(by='timestamp')
+        self._events = pd.concat(events).sort_values(by=['sample_number', 'stream_index'], ignore_index=True)
 
     def load_messages(self):
         pass
@@ -175,7 +175,7 @@ class NwbRecording(Recording):
         
         return "Open Ephys GUI Recording\n" + \
                 "ID: " + hex(id(self)) + '\n' + \
-                "Format: NWB 1.0\n" + \
+                "Format: NWB 2.0\n" + \
                 "Directory: " + self.directory + "\n" + \
                 "Experiment Index: " + str(self.experiment_index) + "\n" + \
                 "Recording Index: " + str(self.recording_index)
