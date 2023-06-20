@@ -135,6 +135,24 @@ class OpenEphysHTTPServer:
         time.sleep(1)
         return res
 
+    def undo(self):
+
+        """
+        Undo the last action.
+        """
+
+        res = self.send('/api/undo')
+        return res
+
+    def redo(self):
+
+        """
+        Redo the last action.
+        """
+
+        res = self.send('/api/redo')
+        return res
+
     def get_processor_list(self):
 
         """
