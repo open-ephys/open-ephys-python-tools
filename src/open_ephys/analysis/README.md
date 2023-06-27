@@ -114,6 +114,7 @@ If spike data has been saved by your Record Node (i.e., there is a Spike Detecto
 - `waveforms` - `numpy.ndarray` containing spike waveforms, with dimensions of spikes x channels x samples
 - `sample_numbers` - `numpy.ndarray` of sample indices (one per spikes)
 - `timestamps` - `numpy.ndarray` of global timestamps (in seconds)
+- `clusters` - `numpy.ndarray` of cluster IDs for each spike (default cluster = 0)
 - `metadata` - `dict` with metadata about each electrode
 
 ## Synchronizing timestamps
