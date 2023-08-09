@@ -257,6 +257,10 @@ class OpenEphysHTTPServer:
             The parameter value (must match the parameter type).
             Hint: Float parameters must be sent with a decimal 
                 included (e.g. 1000.0 instead of 1000)
+
+        Returns
+        -------
+
         """
 
         endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters/' + param_name
@@ -266,16 +270,31 @@ class OpenEphysHTTPServer:
         data = self.send(endpoint, payload)
         return data
 
-    # Get current recording information
     def get_recording_info(self, key=""):
 
         """
-        Get recording information.
+        Get the current recording parameters.
+
+        Available keys:
+        - append_text : string that's appended to the directory name
+        - base_text : the name of the current recording directory
+        - parent_directory : the path where recordings are stored
+        - prepend_text : string that's prepended to the directory name
+        - record_nodes : a list containing information about available Record Nodes
 
         Parameters
         ----------
-        key : String
-            The key to get.
+        key : String (optional)
+            The specific parameter to return
+
+        Returns
+        -------
+        info : dict
+            All recording parameters, if no key is supplied
+
+        param : String
+            The specified parameter value, if a key is supplied
+
         """
 
         data = self.send('/api/recording')
@@ -289,12 +308,20 @@ class OpenEphysHTTPServer:
     def set_parent_dir(self, path):
 
         """
-        Set the parent directory.
+        Set the parent directory for recording.
+
+        This will only be applied to Record Nodes that have
+        not yet been added to the signal chain.
 
         Parameters
         ----------
         path : String
             The path to the parent directory.
+
+        Returns
+        -------
+        info : dict
+            Current recording parameters
         """
 
         payload = {
@@ -312,6 +339,11 @@ class OpenEphysHTTPServer:
         ----------
         text : String
             The text to prepend.
+
+        Returns
+        -------
+        info : dict
+            Current recording parameters
         """
 
         payload = {
@@ -329,6 +361,11 @@ class OpenEphysHTTPServer:
         ----------
         text : String
             The text to base name of the recording directory (see GUI docs).
+
+        Returns
+        -------
+        info : dict
+            Current recording parameters
         """
 
         payload = {
@@ -346,6 +383,11 @@ class OpenEphysHTTPServer:
         ----------
         text : String
             The text to append.
+
+        Returns
+        -------
+        info : dict
+            Current recording parameters
         """
 
         payload = {
@@ -357,7 +399,12 @@ class OpenEphysHTTPServer:
     def set_start_new_dir(self):
 
         """
-        Set if GUI should start a new directory for the next recording.
+        Toggles the creation of a new directory for the next recording.
+
+        Returns
+        -------
+        info : dict
+            Current recording parameters
         """
 
         payload = {
@@ -369,14 +416,19 @@ class OpenEphysHTTPServer:
     def set_file_path(self, node_id, file_path):
 
         """
-        Set the file path.
+        Set the file path of a File Reader.
 
         Parameters
         ----------
         node_id : Integer
-            The node ID.
+            The node ID of the File Reader
         file_path : String
             The file path.
+
+        Returns
+        -------
+        message : String
+            Response message
         """
 
         endpoint = '/api/processors/' + str(node_id) + '/config'
@@ -389,14 +441,19 @@ class OpenEphysHTTPServer:
     def set_file_index(self, node_id, file_index):
 
         """
-        Set the file index.
+        Set the file index of a File Reader
 
         Parameters
         ----------
         node_id : Integer
-            The node ID.
+            The node ID of the File Reader
         file_index : Integer
             The file index.
+
+        Returns
+        -------
+        message : String
+            Response message
         """
 
         endpoint = '/api/processors/' + str(node_id) + '/config'
@@ -409,12 +466,12 @@ class OpenEphysHTTPServer:
     def set_record_engine(self, node_id, engine):
 
         """
-        Set the record engine for a record node.
+        Set the record engine for a Record Node.
 
         Parameters
         ----------
         node_id : Integer
-            The node ID.
+            The node ID of the Record Node
         engine : Integer
                 The record engine index.
         """
@@ -429,12 +486,12 @@ class OpenEphysHTTPServer:
     def set_record_path(self, node_id, directory):
 
         """
-        Set the record path.
+        Set the record path for a Record Node
 
         Parameters
         ----------
         node_id : Integer
-            The node ID.
+            The node ID of the Record Node
         directory : String
             The record path.
         """
@@ -561,12 +618,43 @@ class OpenEphysHTTPServer:
         ----------
         message : String
             The message to send.
+
+        Returns
+        -------
+        message : String
+            Response message
         """
 
         payload = {
             'text' : message
         }
         data = self.send('/api/message', payload)
+
+        return data
+
+    def config(self, node_id, message):
+
+        """
+        Send a configuration message to a specific processor
+
+        Parameters
+        ----------
+        node_id : int
+            3-digit node ID for the target processor
+
+        message : String
+            The message to send.
+
+        Returns
+        -------
+        message : String
+            Response message
+        """
+
+        payload = {
+            'text' : message
+        }
+        data = self.send(f'/api/processors/{node_id}/config', payload)
 
         return data
 
