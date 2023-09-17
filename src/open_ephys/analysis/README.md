@@ -68,7 +68,7 @@ Continuous data for each recording is accessed via the `.continuous` property of
 Each `continuous` object has four properties:
 
 - `samples` - a `numpy.ndarray` that holds the actual continuous data with dimensions of samples x channels. For Binary, NWB, and Kwik format, this will be a memory-mapped array (i.e., the data will only be loaded into memory when specific samples are accessed).
-- `sample_numbers` - a `numpy.ndarray` that holds the sample indices. This will have the same size as the first dimension of the `samples` array
+- `sample_numbers` - a `numpy.ndarray` that holds the sample numbers since the start of acquisition. This will have the same size as the first dimension of the `samples` array
 - `timestamps` - a `numpy.ndarray` that holds global timestamps (in seconds) for each sample, assuming all data streams were synchronized in this recording. This will have the same size as the first dimension of the `samples` array
 - `metadata` - a `dict` containing information about this data, such as the ID of the processor it originated from.
 
@@ -79,7 +79,7 @@ Because the memory-mapped samples are stored as 16-bit integers in arbitrary uni
 >> data = recording.continuous[0].get_samples(start_sample_index=0, end_sample_index=10000)
 ```
 
-This will return the first 10,000 continuous samples for all channels in units of microvolts. Note that your computer may run out of memory when requesting a large number of samples for many channels at once.
+This will return the first 10,000 continuous samples for all channels in units of microvolts. Note that your computer may run out of memory when requesting a large number of samples for many channels at once. It's also important to note that `start_sample_index` and `end_sample_index` represent relative indices in the `samples` array, rather than absolute sample numbers.
 
 ### Using the Open Ephys data format
 
