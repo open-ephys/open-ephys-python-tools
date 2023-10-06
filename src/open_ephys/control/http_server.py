@@ -180,9 +180,9 @@ class OpenEphysHTTPServer:
         ----------
         name : String
             The name of the processor to add (e.g. "Record Node")
-        source : Integer
+        source : Integer, optional
             The 3-digit processor ID of the source (e.g. 101)
-        dest : Integer
+        dest : Integer, optional
             The 3-digit processor ID of the destination (e.g. 102)
         """
 
@@ -222,28 +222,61 @@ class OpenEphysHTTPServer:
 
         return data
 
-    def get_parameters(self, processor_id, stream_index):
+    def get_parameters(self, processor_id, stream_index = None):
 
         """
-        Get parameters for a stream.
+        Get parameters for a processor or a stream. 
 
         Parameters
         ----------
         processor_id : Integer
             The 3-digit processor ID (e.g. 101)
-        stream_index : Integer
+        stream_index : Integer, optional
             The index of the stream (e.g. 0).
+            If not specified, returns processor parameters
         """
 
-        endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters'
+        if stream_index is None:
+            endpoint = '/api/processors/' + str(processor_id) + '/parameters'
+        else:
+            endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters'
+            
         data = self.send(endpoint)
 
+        return data
+
+    def set_parameter(self, processor_id, param_name, value):
+
+        """
+        Update a processor parameter value
+
+        Parameters
+        ----------
+        processor_id : Integer
+            The 3-digit processor ID (e.g. 101)
+        param_name : String
+            The parameter name (e.g. low_cut)
+        value : Any
+            The parameter value (must match the parameter type).
+            Hint: Float parameters must be sent with a decimal 
+                included (e.g. 1000.0 instead of 1000)
+
+        Returns
+        -------
+
+        """
+
+        endpoint = '/api/processors/' + str(processor_id) + '/parameters/' + param_name
+        payload = {
+            'value' : value
+        }
+        data = self.send(endpoint, payload)
         return data
 
     def set_parameter(self, processor_id, stream_index, param_name, value):
 
         """
-        Update a parameter value
+        Update a stream parameter value
 
         Parameters
         ----------
