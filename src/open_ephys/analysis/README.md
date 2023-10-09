@@ -146,6 +146,8 @@ recording.add_sync_line(1,            # TTL line number
 
 You must have one and only one "main" stream, and at least one "auxiliary" stream for synchronization to work.
 
+For each sync line, you can optionally add an interval of sample numbers to ignore, for example if there were any periods in which events were *not* shared by all lines.
+
 Next, running:
 
 ```python
@@ -153,5 +155,13 @@ recording.compute_global_timestamps()
 ```
 
 will generate `global_timestamps` values for each `Continuous` object with a sync line, as well as a `global_timestamp` column in the `recording.events` DataFrame.
+
+Optionally, you can set the `overwrite` argument to `True`:
+
+```python
+recording.compute_global_timestamps(overwrite=True)
+```
+
+This will overwrite the existing `timestamps` values for each `Continuous` object with a sync line, as well as the `timestamp` column in the `recording.events` DataFrame.
 
 Now, you can work with your data aligned to a common timebase.

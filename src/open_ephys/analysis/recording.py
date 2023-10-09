@@ -162,7 +162,7 @@ class Recording(ABC):
         """Returns a string with information about the Recording"""
         pass
     
-    def add_sync_line(self, line, processor_id, stream_name=None, main=False):
+    def add_sync_line(self, line, processor_id, stream_name=None, main=False, ignore_intervals=[]):
         """Specifies an event channel to use for timestamp synchronization. Each 
         sync line in a recording should receive its input from the same 
         physical digital input line.
@@ -182,6 +182,9 @@ class Recording(ABC):
         main : bool
             if True, this stream's timestamps will be treated as the 
             main clock
+        ignore_intervals : list of tuples
+            intervals to ignore when checking for common events
+            default = []
         
         """
 
@@ -213,11 +216,19 @@ class Recording(ABC):
         self.sync_lines.append({'line' : line,
                                 'processor_id' : processor_id,
                                 'stream_name' : stream_name,
-                                'main' : main})
+                                'main' : main,
+                                'ignore_intervals' : ignore_intervals})
         
-    def compute_global_timestamps(self):
+    def compute_global_timestamps(self, overwrite=False):
         """After sync channels have been added, this function computes the
         global timestamps for all processors with a shared sync line.
+
+        Parameters
+        ----------
+        overwrite : bool
+            if True, overwrite existing timestamps
+            if False, add an extra "global_timestamp" column
+            default = False
         
         """
         
@@ -226,42 +237,63 @@ class Recording(ABC):
                             'using `add_sync_line` before global timestamps ' + 
                             'can be computed.')
 
-        main = [sync for sync in self.sync_lines 
+        main_line = [sync for sync in self.sync_lines 
                              if sync['main']]
         
-        aux_channels = [sync for sync in self.sync_lines 
+        aux_lines = [sync for sync in self.sync_lines 
                              if not sync['main']]
             
-        if len(main) == 0 or len(aux_channels) == 0:
+        if len(main_line) == 0:
             raise Exception('Computing global timestamps requires one ' + 
-                            'main sync channel and at least one auxiliary ' +
-                            'sync channel.')
+                            'main sync line to be specified.')
             
-        main = main[0]
+        main_line = main_line[0]
 
-        main_events = self.events[(self.events.line == main['line']) & 
-                   (self.events.processor_id == main['processor_id']) & 
-                   (self.events.stream_name == main['stream_name']) &
+        main_events = self.events[(self.events.line == main_line['line']) & 
+                   (self.events.processor_id == main_line['processor_id']) & 
+                   (self.events.stream_name == main_line['stream_name']) &
                    (self.events.state == 1)]
+        
+        # sort by sample number, in case the original timestamps were incorrect
+        main_events = main_events.sort_values(by='sample_number')
+
+        # remove any events that fall within the ignore intervals
+        for ignore_interval in main_line['ignore_intervals']:
+            main_events = main_events[(main_events.sample_number < ignore_interval[0]) |
+                                      (main_events.sample_number > ignore_interval[1])]
         
         main_start_sample = main_events.iloc[0].sample_number
         main_total_samples = main_events.iloc[-1].sample_number - main_start_sample
-        main['start'] = main_start_sample
-        main['scaling'] = 1
-        main['offset'] = main_start_sample
-        
+        main_line['start'] = main_start_sample
+        main_line['scaling'] = 1
+        main_line['offset'] = main_start_sample
+
         for continuous in self.continuous:
 
-            if (continuous.metadata['source_node_id'] == main['processor_id']) and \
-               (continuous.metadata['stream_name'] == main['stream_name']):
-               main['sample_rate'] = continuous.metadata['sample_rate']
+            if (continuous.metadata['source_node_id'] == main_line['processor_id']) and \
+               (continuous.metadata['stream_name'] == main_line['stream_name']):
+               main_line['sample_rate'] = continuous.metadata['sample_rate']
         
-        for aux in aux_channels:
+        print(f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))')
+        print(f'  First event sample number: {main_line["start"]}')
+        print(f'  Last event sample number: {main_total_samples - main_line["start"]}')
+        print(f'  Total sync events: {len(main_events)}')
+        print(f'  Sample rate: {main_line["sample_rate"]}')
+
+        for aux in aux_lines:
             
             aux_events = self.events[(self.events.line == aux['line']) &
                    (self.events.processor_id == aux['processor_id']) &
                    (self.events.stream_name == aux['stream_name']) &
                    (self.events.state == 1)]
+            
+            # sort by sample number, in case the original timestamps were incorrect
+            aux_events = aux_events.sort_values(by='sample_number')
+
+            # remove any events that fall within the ignore intervals
+            for ignore_interval in aux['ignore_intervals']:
+                aux_events = aux_events[(aux_events.sample_number < ignore_interval[0]) |
+                                      (aux_events.sample_number > ignore_interval[1])]
             
             aux_start_sample = aux_events.iloc[0].sample_number
             aux_total_samples = aux_events.iloc[-1].sample_number - aux_start_sample
@@ -269,35 +301,48 @@ class Recording(ABC):
             aux['start'] = aux_start_sample
             aux['scaling'] = main_total_samples / aux_total_samples
             aux['offset'] = main_start_sample
-            aux['sample_rate'] = main['sample_rate']
+            aux['sample_rate'] = main_line['sample_rate']
 
-        for sync in self.sync_lines:
+            print(f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))')
+            print(f'  First event sample number: {aux["start"]}')
+            print(f'  Last event sample number: {aux_total_samples - aux["start"]}')
+            print(f'  Total sync events: {len(aux_events)}')
+            print(f'  Scale factor: {aux["scaling"]}')
+            print(f'  Actual sample rate: {aux["sample_rate"] / aux["scaling"]}')
+
+        for sync_line in self.sync_lines: # loop through all sync lines
             
             for continuous in self.continuous:
 
-                if (continuous.metadata['source_node_id'] == sync['processor_id']) and \
-                   (continuous.metadata['stream_name'] == main['stream_name']):
+                if (continuous.metadata['source_node_id'] == sync_line['processor_id']) and \
+                   (continuous.metadata['stream_name'] == sync_line['stream_name']):
                        
                     continuous.global_timestamps = \
-                        ((continuous.sample_numbers - sync['start']) * sync['scaling'] \
-                            + sync['offset']) 
+                        ((continuous.sample_numbers - sync_line['start']) * sync_line['scaling'] \
+                            + sync_line['offset']) 
+                    
+                    global_timestamps = continuous.global_timestamps / sync_line['sample_rate'] / sync_line['scaling']
                             
-                    continuous.global_timestamps = continuous.global_timestamps / sync['sample_rate'] / sync['scaling']
+                    if overwrite:
+                        continuous.timestamps = global_timestamps
+                    else:
+                        continuous.global_timestamps = global_timestamps
                             
-            event_inds = self.events[(self.events.processor_id == sync['processor_id']) & 
-                   (self.events.stream_name == sync['stream_name'])].index.values
+            event_inds = self.events[(self.events.processor_id == sync_line['processor_id']) & 
+                   (self.events.stream_name == sync_line['stream_name'])].index.values
 
-            global_timestamps = (self.events.loc[event_inds].sample_number - sync['start']) \
-                                  * sync['scaling'] \
-                                   + sync['offset']
+            global_timestamps = (self.events.loc[event_inds].sample_number - sync_line['start']) \
+                                  * sync_line['scaling'] \
+                                   + sync_line['offset']
                                    
-            global_timestamps = global_timestamps / sync['sample_rate']
+            global_timestamps = global_timestamps / sync_line['sample_rate']
             
-            for ind, ts in zip(event_inds, global_timestamps):
-                self.events.at[ind, 'global_timestamp'] = ts
-            
-            
-                            
+            if overwrite:
+                self.events.loc[event_inds, 'timestamp'] = global_timestamps
+            else:
+                for ind, ts in zip(event_inds, global_timestamps):
+                    self.events.at[ind, 'global_timestamp'] = ts
+    
                                               
         
         
