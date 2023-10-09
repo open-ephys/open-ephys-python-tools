@@ -172,8 +172,8 @@ class Recording(ABC):
         
         Parameters
         ----------
-        channel : int
-            event channel number
+        line : int
+            event line number (1-based indexing)
         processor_id : int
             ID for the processor receiving sync events (eg 101)
         stream_name : str
@@ -184,6 +184,15 @@ class Recording(ABC):
             main clock
         
         """
+
+        events_on_line = self.events[(self.events.line == line) &
+                                     (self.events.processor_id == processor_id) &
+                                     (self.events.stream_name == stream_name)]
+        
+
+        if len(events_on_line) == 0:
+            raise Exception('No events found on this line. ' + 
+                            'Check that the processor ID and stream name are correct.')
         
         if main:
             existing_main = [sync for sync in self.sync_lines 
@@ -199,8 +208,8 @@ class Recording(ABC):
         
         if len(matching_node) == 1:
             self.sync_lines.remove(matching_node[0])
-            warnings.warn('Another sync line exists for this node, overwriting.')
-        
+            warnings.warn('Another sync line exists for this processor/stream combination, overwriting.')
+
         self.sync_lines.append({'line' : line,
                                 'processor_id' : processor_id,
                                 'stream_name' : stream_name,
