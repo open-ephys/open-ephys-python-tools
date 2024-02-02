@@ -245,7 +245,7 @@ class OpenEphysHTTPServer:
 
         return data
 
-    def set_parameter(self, processor_id, param_name, value):
+    def set_processor_parameter(self, processor_id, param_name, value):
 
         """
         Update a processor parameter value
@@ -273,7 +273,7 @@ class OpenEphysHTTPServer:
         data = self.send(endpoint, payload)
         return data
 
-    def set_parameter(self, processor_id, stream_index, param_name, value):
+    def set_stream_parameter(self, processor_id, stream_index, param_name, value):
 
         """
         Update a stream parameter value
