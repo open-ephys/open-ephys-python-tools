@@ -153,6 +153,93 @@ class OpenEphysHTTPServer:
         res = self.send('/api/redo')
         return res
 
+    def get_audio_settings(self, key=""):
+
+        """
+        Get the current audio device settings.
+
+        Available keys:
+        - buffer_size : The buffer size in samples
+        - sample_rate : The sample rate in Hz
+        - device_type : The audio device type
+
+        Parameters
+        ----------
+        key : String (optional)
+            The specific parameter to return
+
+        Returns
+        -------
+        info : dict
+            All audio device settings, if no key is supplied
+
+        param : String
+            The specified parameter value, if a key is supplied
+
+        """
+
+        data = self.send('/api/audio')
+        if key == "":
+            return data
+        elif key in data:
+            return data[key]
+        else:
+            return "Invalid key"
+
+    def set_sample_rate(self, sample_rate):
+
+        """
+        Set the audio device sample rate.
+
+        Parameters
+        ----------
+        sample_rate : Integer
+            The sample rate in Hz.
+        """
+
+        payload = {
+            'sample_rate' : sample_rate
+        }
+
+        res = self.send('/api/audio', payload)
+        return res
+
+    def set_buffer_size(self, buffer_size):
+
+        """
+        Set the audio device buffer size.
+
+        Parameters
+        ----------
+        buffer_size : Integer
+            The buffer size in samples.
+        """
+
+        payload = {
+            'buffer_size' : buffer_size
+        }
+
+        res = self.send('/api/audio', payload)
+        return res
+
+    def set_device_type(self, device_type):
+
+        """
+        Set the audio device type.
+
+        Parameters
+        ----------
+        device_type : String
+            The audio device type.
+        """
+
+        payload = {
+            'device_type' : device_type
+        }
+
+        res = self.send('/api/audio', payload)
+        return res
+
     def get_processor_list(self):
 
         """
