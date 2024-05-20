@@ -143,7 +143,7 @@ class NwbRecording(Recording):
             
             if (dataset[-4:] == '.TTL'):
 
-                processor_id = int(dataset.split('.')[0].split('-')[1])
+                processor_id = int(dataset.split('.')[0].split('-')[-1])
                 stream_name = dataset.split('.')[1]
 
                 if processor_id not in processor_ids:
