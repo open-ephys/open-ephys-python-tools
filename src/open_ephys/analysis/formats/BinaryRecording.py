@@ -65,13 +65,18 @@ class BinaryRecording(Recording):
     
     class Continuous:
         
-        def __init__(self, info, base_directory, version):
+        def __init__(self, info, base_directory, version, mmap_timestamps=True):
             
             directory = os.path.join(base_directory, 'continuous', info['folder_name'])
 
             self.name = info['folder_name']
 
             self.metadata = {}
+
+            if mmap_timestamps:
+                self.mmap_mode = 'r'
+            else:
+                self.mmap_mode = None
 
             self.metadata['source_node_id'] = info['source_processor_id']
             self.metadata['source_node_name'] = info['source_processor_name']
@@ -93,10 +98,10 @@ class BinaryRecording(Recording):
 
             try:
                 if version >= 0.6:
-                    self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode='r')
-                    self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
+                    self.sample_numbers = np.load(os.path.join(directory, 'sample_numbers.npy'), mmap_mode=self.mmap_mode)
+                    self.timestamps = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode=self.mmap_mode)
                 else:
-                    self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode='r')
+                    self.sample_numbers = np.load(os.path.join(directory, 'timestamps.npy'), mmap_mode=self.mmap_mode)
             except FileNotFoundError as e:
                 if os.path.basename(e.filename) == 'sample_numbers.npy':
                     self.sample_numbers = np.arange(self.samples.shape[0])
@@ -134,11 +139,12 @@ class BinaryRecording(Recording):
 
             return samples
     
-    def __init__(self, directory, experiment_index=0, recording_index=0):
+    def __init__(self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True):
         
-       Recording.__init__(self, directory, experiment_index, recording_index)  
+       Recording.__init__(self, directory, experiment_index, recording_index, mmap_timestamps)  
        
-       self.info = json.load(open(os.path.join(self.directory, 'structure.oebin')))
+       with open(os.path.join(self.directory, 'structure.oebin'), 'r') as oebin_file:
+            self.info = json.load(oebin_file)
        self._format = 'binary'
        self._version = float(".".join(self.info['GUI version'].split('.')[:2]))
        
@@ -149,7 +155,7 @@ class BinaryRecording(Recording):
         for info in self.info['continuous']:
             
             try:
-                c = self.Continuous(info, self.directory, self._version)
+                c = self.Continuous(info, self.directory, self._version, self.mmap_timestamps)
             except FileNotFoundError as e:
                 print(info["folder_name"] + " missing file: '" + os.path.basename(e.filename) + "'")
             else:
@@ -287,7 +293,7 @@ class BinaryRecording(Recording):
             return False
     
     @staticmethod
-    def detect_recordings(directory):
+    def detect_recordings(directory, mmap_timestamps=True):
         
         recordings = []
         
@@ -303,7 +309,8 @@ class BinaryRecording(Recording):
             
                 recordings.append(BinaryRecording(recording_directory, 
                                                        experiment_index,
-                                                       recording_index))
+                                                       recording_index,
+                                                       mmap_timestamps))
                 
         return recordings
 

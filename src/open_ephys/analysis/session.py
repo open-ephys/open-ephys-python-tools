@@ -45,16 +45,21 @@ class Session:
     
     """
     
-    def __init__(self, directory):
+    def __init__(self, directory, mmap_timestamps=True):
         """ Construct a session object, which provides access to
         data from multiple Open Ephys Record Nodes
 
         Parameters
         ----------
         directory: path to the session directory
+        memmap_timestamps: bool, optional
+            If True, timestamps will be memory-mapped for faster access
+            (default is True). Set to False if you plan to overwrite the
+            timestamps files in the session directory.
         """
         
         self.directory = directory;
+        self.mmap_timestamps = mmap_timestamps;
         
         self._detect_record_nodes()
         
@@ -70,11 +75,11 @@ class Session:
         
         if len(recordnodepaths) == 0:
 
-            self.recordings = RecordNode(self.directory).recordings
+            self.recordings = RecordNode(self.directory, self.mmap_timestamps).recordings
 
         else:
 
-            self.recordnodes = [RecordNode(path) for path in recordnodepaths]
+            self.recordnodes = [RecordNode(path, self.mmap_timestamps) for path in recordnodepaths]
 
     def __str__(self):
         """Returns a string with information about the Session"""

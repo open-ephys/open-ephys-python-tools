@@ -399,7 +399,7 @@ class OpenEphysRecording(Recording):
             return False
     
     @staticmethod
-    def detect_recordings(directory):
+    def detect_recordings(directory, mmap_timestamps=True):
 
         recordings = []
         

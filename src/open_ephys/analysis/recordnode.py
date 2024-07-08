@@ -43,20 +43,25 @@ class RecordNode:
     
     """
     
-    def __init__(self, directory):
+    def __init__(self, directory, mmap_timestamps=True):
         """ Construct a RecordNode object, which provides access to
         data from one Open Ephys Record Node
 
         Parameters
         ----------
         directory: location of Record Node directory
+
+        mmap_timestamps: bool, optional
+            If True, timestamps will be memory-mapped for faster access
+            (default is True). Set to False if you plan to overwrite the
+            timestamps files in the session directory.
         """
         
         self.directory = directory
         
         self._detect_format()
         
-        self._detect_recordings()
+        self._detect_recordings(mmap_timestamps)
         
         
     def _detect_format(self):
@@ -76,12 +81,12 @@ class RecordNode:
         raise(IOError('No available data format detected.'))
         
         
-    def _detect_recordings(self):
+    def _detect_recordings(self, mmap_timestamps):
         """
         Internal method used to detect Recordings upon initialization
         """
         
-        self.recordings = self.formats[self.format].detect_recordings(self.directory)
+        self.recordings = self.formats[self.format].detect_recordings(self.directory, mmap_timestamps)
 
     def __str__(self):
         """Returns a string with information about the RecordNode"""

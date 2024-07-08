@@ -103,7 +103,7 @@ class Recording(ABC):
     def format(self):
         return self._format
     
-    def __init__(self, directory, experiment_index=0, recording_index=0):
+    def __init__(self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True):
         """ Construct a Recording object, which provides access to
         data from one recording (start/stop acquisition or start/stop recording)
 
@@ -117,12 +117,16 @@ class Recording(ABC):
         recording_index : int
             0-based index of recording
             defaults to 0
+        mmap_timestamps : bool
+            Determines whether timestamps are memory-mapped
+            Set to False if you plan to overwrite the timestamps files
         
         """
         
         self.directory = directory
         self.experiment_index = experiment_index
         self.recording_index = recording_index
+        self.mmap_timestamps = mmap_timestamps
         
         self._continuous = None
         self._events = None
@@ -153,7 +157,7 @@ class Recording(ABC):
         pass
     
     @abstractmethod
-    def detect_recordings(directory):
+    def detect_recordings(directory, mmap_timestamps=True):
         """Finds Recordings within a Record Node directory"""
         pass
     
