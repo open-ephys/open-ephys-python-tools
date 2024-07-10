@@ -116,6 +116,19 @@ class OpenEphysHTTPServer:
 
         return resp.json()
 
+    def save(self, filepath):
+
+        """
+        Save the current configuration.
+        """
+
+        payload = {
+            'filepath' : filepath,
+        }
+
+        res = self.send('/api/save', payload)
+        return res
+
     def load(self, config_path):
 
         """
@@ -132,7 +145,6 @@ class OpenEphysHTTPServer:
         }
 
         res = self.send('/api/load', payload)
-        time.sleep(1)
         return res
 
     def undo(self):
@@ -152,6 +164,24 @@ class OpenEphysHTTPServer:
 
         res = self.send('/api/redo')
         return res
+
+    def get_audio_devices(self):
+
+        """
+        Get the available audio devices.
+        """
+
+        data = self.send('/api/audio/devices')
+        return data
+
+    def get_config(self):
+
+        """
+        Get the current configuration.
+        """
+
+        data = self.send('/api/config')
+        return data
 
     def get_audio_settings(self, key=""):
 
@@ -178,7 +208,7 @@ class OpenEphysHTTPServer:
 
         """
 
-        data = self.send('/api/audio')
+        data = self.send('/api/audio/device')
         if key == "":
             return data
         elif key in data:
@@ -235,6 +265,24 @@ class OpenEphysHTTPServer:
 
         payload = {
             'device_type' : device_type
+        }
+
+        res = self.send('/api/audio', payload)
+        return res
+
+    def set_device_name(self, device_name):
+
+        """
+        Set the audio device name.
+
+        Parameters
+        ----------
+        device_name : String
+            The audio device name.
+        """
+
+        payload = {
+            'device_name' : device_name
         }
 
         res = self.send('/api/audio', payload)
@@ -802,10 +850,7 @@ class OpenEphysHTTPServer:
         Quit the GUI.
         """
 
-        payload = { 
-            'command' : 'quit' 
-        }
-        data = self.send('/api/window', payload)
+        data = self.send('/api/quit', {})
 
         return data
 
