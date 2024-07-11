@@ -165,6 +165,15 @@ class OpenEphysHTTPServer:
         res = self.send('/api/redo')
         return res
 
+    def get_cpu_usage(self):
+
+        """
+        Get the average proportion of available CPU being spent inside the audio callbacks.
+        """
+
+        data = self.send('/api/cpu')
+        return data
+
     def get_audio_devices(self):
 
         """
