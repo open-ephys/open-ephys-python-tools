@@ -147,6 +147,7 @@ class BinaryRecording(Recording):
             self.info = json.load(oebin_file)
        self._format = 'binary'
        self._version = float(".".join(self.info['GUI version'].split('.')[:2]))
+       self.sort_events = True
        
     def load_continuous(self):
         
@@ -209,10 +210,17 @@ class BinaryRecording(Recording):
             
         if len(df) > 0:
 
-            if self._version >= 0.6:                  
-                self._events = pd.concat(df).sort_values(by=['timestamp', 'stream_index'], ignore_index=True)
-            else:
-                self._events = pd.concat(df).sort_values(by=['sample_number', 'stream_index'], ignore_index=True)
+            self._events = pd.concat(df)
+
+            if self.sort_events:
+                if self._version >= 0.6:                  
+                    self._events.sort_values(by=['timestamp', 'stream_index'], 
+                                             ignore_index=True,
+                                             inplace=True)
+                else:
+                    self._events.sort_values(by=['sample_number','stream_index'], 
+                                             ignore_index=True,
+                                             inplace=True)
 
         else:
             
