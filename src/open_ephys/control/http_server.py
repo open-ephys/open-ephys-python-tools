@@ -174,6 +174,15 @@ class OpenEphysHTTPServer:
         data = self.send('/api/cpu')
         return data
 
+    def get_latencies(self):
+
+        """
+        Get processor latencies.
+        """
+
+        data = self.send('/api/latency')
+        return data
+
     def get_audio_devices(self):
 
         """
