@@ -29,6 +29,7 @@ import pandas as pd
 import json
 
 from open_ephys.analysis.recording import Recording
+from open_ephys.analysis.utils import alphanum_key
 
 class BinaryRecording(Recording):
     
@@ -306,12 +307,12 @@ class BinaryRecording(Recording):
         recordings = []
         
         experiment_directories = glob.glob(os.path.join(directory, 'experiment*'))
-        experiment_directories.sort()
+        experiment_directories.sort(key=alphanum_key)
 
         for experiment_index, experiment_directory in enumerate(experiment_directories):
              
             recording_directories = glob.glob(os.path.join(experiment_directory, 'recording*'))
-            recording_directories.sort()
+            recording_directories.sort(key=alphanum_key)
             
             for recording_index, recording_directory in enumerate(recording_directories):
             
