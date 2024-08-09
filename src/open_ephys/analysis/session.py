@@ -28,6 +28,7 @@ import os
 import warnings
 
 from open_ephys.analysis.recordnode import RecordNode
+from open_ephys.analysis.utils import alphanum_key
 
 class Session:
     
@@ -71,7 +72,7 @@ class Session:
         
         recordnodepaths = glob.glob(os.path.join(self.directory, 
                                              'Record Node *'))
-        recordnodepaths.sort()
+        recordnodepaths.sort(key=alphanum_key)
         
         if len(recordnodepaths) == 0:
 
