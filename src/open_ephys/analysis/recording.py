@@ -325,7 +325,7 @@ class Recording(ABC):
                         ((continuous.sample_numbers - sync_line['start']) * sync_line['scaling'] \
                             + sync_line['offset']) 
                     
-                    global_timestamps = continuous.global_timestamps / sync_line['sample_rate'] / sync_line['scaling']
+                    global_timestamps = continuous.global_timestamps / sync_line['sample_rate']
                             
                     if overwrite:
                         continuous.timestamps = global_timestamps
