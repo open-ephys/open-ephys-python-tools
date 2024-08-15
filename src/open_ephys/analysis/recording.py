@@ -280,7 +280,7 @@ class Recording(ABC):
         
         print(f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))')
         print(f'  First event sample number: {main_line["start"]}')
-        print(f'  Last event sample number: {main_total_samples - main_line["start"]}')
+        print(f'  Last event sample number: {main_events.iloc[-1].sample_number}')
         print(f'  Total sync events: {len(main_events)}')
         print(f'  Sample rate: {main_line["sample_rate"]}')
 
@@ -309,7 +309,7 @@ class Recording(ABC):
 
             print(f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))')
             print(f'  First event sample number: {aux["start"]}')
-            print(f'  Last event sample number: {aux_total_samples - aux["start"]}')
+            print(f'  Last event sample number: {aux_events.iloc[-1].sample_number}')
             print(f'  Total sync events: {len(aux_events)}')
             print(f'  Scale factor: {aux["scaling"]}')
             print(f'  Actual sample rate: {aux["sample_rate"] / aux["scaling"]}')
