@@ -80,6 +80,8 @@ class OpenEphysRecording(Recording):
             self.metadata['num_channels'] = len(files)
 
             self.metadata['channel_names'] = info['channel_names']
+            self.metadata['channel_map'] = self.create_channel_map(info)
+
             self.metadata['bit_volts'] = info['bit_volts']
 
             self._load_timestamps()
@@ -118,12 +120,14 @@ class OpenEphysRecording(Recording):
             """
 
             if selected_channels is None:
-                selected_channels = np.arange(self.selected_channels.size)
+                selected_channels = np.arange(self.selected_channels.size,dtype=np.uint32)
 
-            samples = self.samples[start_sample_index:end_sample_index, selected_channels].astype('float64')
+            selected_ch = np.array([ self.metadata['channel_map'][ch] for ch in selected_channels ],dtype=np.uint32)
 
-            for idx, channel in enumerate(selected_channels):
-                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][self.selected_channels[channel]]
+            samples = self.samples[start_sample_index:end_sample_index, selected_ch].astype('float64')
+
+            for idx, ch in enumerate(selected_ch):
+                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][ch]
 
             return samples
 

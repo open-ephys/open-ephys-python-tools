@@ -222,7 +222,43 @@ class Recording(ABC):
                                 'stream_name' : stream_name,
                                 'main' : main,
                                 'ignore_intervals' : ignore_intervals})
+
+    @static_method    
+    def create_channel_map(info):
+        """ Create channel map to generate list of channel names that map to
+            indices. The `channels` key maps to an (ordered) 
+            list of channels with tags of the form CHn, or ADCn.
+
+        Parameters
+        ----------
+        info : dict
+
+        Returns
+        -------
+        channel_map: dict
+
+        """
+        channel_names = [ch['channel_name'] for ch in info['channels']]
+
+        channel_map = {}
         
+        for i,c in enumerate(channel_names):
+            if c.startswith('CH'):
+                ch_id = int(c.lstrip('CH'))
+            elif c.startswith('ADC'):
+                ch_id = i
+            else:
+                ch_id = i
+            channel_map[ch_id] = i
+
+        print("check channel len: ", info['num_channels'], ' against ', len(self.metadata['channel_names'])))
+        print("channel names: ", self.metadata['channel_names'])
+        print('channel_map" : ')
+        for ch, idx in self.metadata['channel_map']:
+            print('\t',ch, idx)
+
+        return channel_map
+
     def compute_global_timestamps(self, overwrite=False):
         """After sync channels have been added, this function computes the
         global timestamps for all processors with a shared sync line.

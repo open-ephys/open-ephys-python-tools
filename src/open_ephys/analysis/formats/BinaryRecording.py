@@ -91,6 +91,8 @@ class BinaryRecording(Recording):
             self.metadata['num_channels'] = info['num_channels']
 
             self.metadata['channel_names'] = [ch['channel_name'] for ch in info['channels']]
+            self.metadata['channel_map'] = self.create_channel_map(info)
+
             self.metadata['bit_volts'] = [ch['bit_volts'] for ch in info['channels']]
 
             data = np.memmap(os.path.join(directory, 'continuous.dat'), mode='r', dtype='int16')
@@ -121,8 +123,13 @@ class BinaryRecording(Recording):
             end_sample_index : int
                 Index of the last sample to return
             selected_channels : numpy.ndarray
-                Indices of the channels to return
-                By default, all channels are returned
+                Channel number(s) that you request. The array index is looked-up from a 
+                dict that translates the channel ID (an interger of version of channel
+                name where ``'CH22' = 22``)  to the index of the storage array.
+                Order is kept consisitent with the **Channel Map** plugin as recorded in the 
+`               ``oebin`` file. By default, all channels are returned. If you board has 
+                additional ``ADCn`` channels, they are sequentially numbered after reaching
+                the last ``CHnn`` labeled channel. 
 
             Returns
             -------
@@ -131,12 +138,14 @@ class BinaryRecording(Recording):
             """
 
             if selected_channels is None:
-                selected_channels = np.arange(self.metadata['num_channels'])
+                 selected_channels = np.arange(self.metadata['num_channels'],dtype=np.uint32)
 
-            samples = self.samples[start_sample_index:end_sample_index, selected_channels].astype('float64')
+            selected_ch = np.array([ self.metadata['channel_map'][ch] for ch in selected_channels ],dtype=np.uint32)
 
-            for idx, channel in enumerate(selected_channels):
-                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][channel]
+            samples = self.samples[start_sample_index:end_sample_index, selected_ch].astype('float64')
+
+            for idx, ch in enumerate(selected_ch):
+                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][ch]
 
             return samples
     

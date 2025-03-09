@@ -67,6 +67,7 @@ class NwbRecording(Recording):
 
             self.metadata['sample_rate'] = np.around(1 / nwb['acquisition'][dataset]['timestamps'].attrs['interval'], 1)
             self.metadata['num_channels'] = nwb['acquisition'][dataset]['data'].shape[1]
+            self.metadata['channel_map'] = self.create_channel_map(info)
             self.metadata['bit_volts'] = \
                     list(nwb['acquisition'][dataset]['channel_conversion'][()] * 1e6)
 
