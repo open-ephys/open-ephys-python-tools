@@ -80,7 +80,7 @@ class OpenEphysRecording(Recording):
             self.metadata['num_channels'] = len(files)
 
             self.metadata['channel_names'] = info['channel_names']
-            self.metadata['channel_map'] = self.create_channel_map(info)
+            self.metadata['channel_map'] = Recording.create_channel_map(info)
 
             self.metadata['bit_volts'] = info['bit_volts']
 

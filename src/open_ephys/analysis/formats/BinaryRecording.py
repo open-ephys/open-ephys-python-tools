@@ -91,7 +91,7 @@ class BinaryRecording(Recording):
             self.metadata['num_channels'] = info['num_channels']
 
             self.metadata['channel_names'] = [ch['channel_name'] for ch in info['channels']]
-            self.metadata['channel_map'] = self.create_channel_map(info)
+            self.metadata['channel_map'] = Recording.create_channel_map(info)
 
             self.metadata['bit_volts'] = [ch['bit_volts'] for ch in info['channels']]
 
@@ -111,7 +111,7 @@ class BinaryRecording(Recording):
 
             self.global_timestamps = None
 
-        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None):
+        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None, *, channel_by_number = None):
             """
             Returns samples scaled to microvolts. Converts sample values
             from 16-bit integers to 64-bit floats.
@@ -137,8 +137,29 @@ class BinaryRecording(Recording):
 
             """
 
-            if selected_channels is None:
-                 selected_channels = np.arange(self.metadata['num_channels'],dtype=np.uint32)
+            if selected_channels and channel_by_number:
+                raise ValueError("Cannot use both ``selected_channels`` and ``channel_by_number`` channel selection methods") 
+            elif selected_channels and not channel_by_number:
+                if type(selected_channels) is int:
+                    selected_channels = np.array([int],dtype=np.uint32)
+                    selected_channels -= 1 
+                elif isinstance(np.ndarray,selected_channels):
+                    selected_channels -= 1 
+                else:
+                    selected_channels = np.array(selected_channels,dtype=np.uint32)
+                    selected_channels -= 1 
+            elif not selected_channels and channel_by_number:
+                if type(channel_by_number) is int:
+                    selected_channels = np.array([int],dtype=np.uint32)
+                    selected_channels -= 1 
+                elif isinstance(np.ndarray,channel_by_number):
+                    selected_channels -= 1 
+                else:
+                    selected_channels = np.array(channel_by_number,dtype=np.uint32)
+                    selected_channels -= 1 
+            else:
+                selected_channels = np.arange(self.metadata['num_channels'],dtype=np.uint32)
+                selected_channels += 1 #change index to match channel ID, not array index
 
             selected_ch = np.array([ self.metadata['channel_map'][ch] for ch in selected_channels ],dtype=np.uint32)
 
