@@ -78,8 +78,12 @@ class OpenEphysRecording(Recording):
 
             self.metadata['sample_rate'] = info['sample_rate']
             self.metadata['num_channels'] = len(files)
+            if selected_channels is None:
+                selected_channels = np.arange(self.selected_channels.size,dtype=np.uint32)
 
             self.metadata['channel_names'] = info['channel_names']
+            self.metadata['channel_map'] = Recording.create_channel_map(info)
+
             self.metadata['bit_volts'] = info['bit_volts']
 
             self._load_timestamps()
@@ -93,7 +97,7 @@ class OpenEphysRecording(Recording):
                 self.reload_required = False
             return self._samples
 
-        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None):
+        def get_samples(self, start_sample_index, end_sample_index, selected_channels=None, *, channel_by_number = None):
             """
             Returns samples scaled to microvolts. Converts sample values
             from 16-bit integers to 64-bit floats.
@@ -107,9 +111,18 @@ class OpenEphysRecording(Recording):
                 Index of the first sample to return
             end_sample_index : int
                 Index of the last sample to return
-            selected_channels : numpy.ndarray
-                Indices of the channels to return
-                By default, all channels are returned
+            selected_channels : numpy.ndarray, optional
+                Array index of data to extract. The channel you will be returned is 
+                the argument+1 as arrays are zero-indexed. Internally, the channel returned 
+                will be looked up as described in ``channel_by_number``.
+            channel_by_number : numpy.ndarray, optional
+                Channel number(s) that you request. The array index is looked-up from a 
+                dict that translates the channel ID (an interger of version of channel
+                name where ``'CH22' = 22``)  to the index of the storage array.
+                Order is kept consisitent with the **Channel Map** plugin as recorded in the 
+`               ``oebin`` file. By default, all channels are returned. If you board has 
+                additional ``ADCn`` channels, they are sequentially numbered after reaching
+                the last ``CHnn`` labeled channel. 
 
             Returns
             -------
@@ -117,13 +130,40 @@ class OpenEphysRecording(Recording):
 
             """
 
-            if selected_channels is None:
-                selected_channels = np.arange(self.selected_channels.size)
+            if selected_channels and channel_by_number:
+                raise ValueError("Cannot use both ``selected_channels`` and ``channel_by_number`` channel selection methods") 
+            elif selected_channels and not channel_by_number:
+                print("WARNING: You are selecting channels by array index, not channel ID!\n"
+                      "         Channel number will be the array index +1 by default\n"
+                      "         Use ``channel_by_number`` keyword to select channels by ID\n"
+                      "           This is important when channel ordering has changed due to\n"
+                      "           the use of the channel selector plugin.")
 
-            samples = self.samples[start_sample_index:end_sample_index, selected_channels].astype('float64')
+                if type(selected_channels) is int:
+                    selected_channels = np.array([selected_channels],dtype=np.uint32)
+                    selected_channels += 1 
+                elif isinstance(np.ndarray,type(selected_channels)):
+                    selected_channels += 1 
+                else:
+                    selected_channels = np.array(selected_channels,dtype=np.uint32)
+                    selected_channels += 1 
+            elif not selected_channels and channel_by_number:
+                if type(channel_by_number) is int:
+                    selected_channels = np.array([channel_by_number],dtype=np.uint32)
+                elif isinstance(np.ndarray,type(channel_by_number)):
+                    pass
+                else:
+                    selected_channels = np.array(channel_by_number,dtype=np.uint32)
+            else:
+                selected_channels = np.arange(self.metadata['num_channels'],dtype=np.uint32)
+                selected_channels += 1 #change index to match channel ID, not array index
 
-            for idx, channel in enumerate(selected_channels):
-                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][self.selected_channels[channel]]
+            selected_ch = np.array([ self.metadata['channel_map'][ch] for ch in selected_channels ],dtype=np.uint32)
+
+            samples = self.samples[start_sample_index:end_sample_index, selected_ch].astype('float64')
+
+            for idx, ch in enumerate(selected_ch):
+                samples[:,idx] = samples[:,idx] * self.metadata['bit_volts'][ch]
 
             return samples
 
