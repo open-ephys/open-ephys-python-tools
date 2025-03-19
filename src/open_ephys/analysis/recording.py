@@ -225,9 +225,25 @@ class Recording(ABC):
 
     @staticmethod    
     def create_channel_map(info):
-        """ Create channel map to generate list of channel names that map to
-            indices. The `channels` key maps to an (ordered) 
-            list of channels with tags of the form CHn, or ADCn.
+        """ Create channel map to generate list of channel 
+        names that map to indices. The `channels` key maps 
+        to an (ordered) list of channels with tags of the 
+        form CHn, or ADCn. Notes regarding conversion of 
+        channel to array index map:
+        
+            The addition of +1 to channels that are not 
+            have repeat indices (with different 
+            leading charactars) is important as it 
+            keeps the channel numbering consistennt 
+            so that channels match their ID, not their 
+            array index!
+            
+            If channel #64 is the last CHn channel
+            followed by AC1, then the AC1 channel 
+            should be 65 to always allow an integer 
+            index to each channel and count on
+            the user having to use array index
+            for non CHn labeled channels.
 
         Parameters
         ----------
@@ -242,23 +258,6 @@ class Recording(ABC):
 
         channel_map = {}
         
-        print("Channel ID, index")
-        #
-        #  Notes channel to array index map:
-        #
-        # The addition of +1 to channels that are not 
-        # have repeat indices (with different 
-        # leading charactars) is important as it 
-        # keeps the channel numbering consistennt 
-        # so that channels match their ID, not their 
-        # array index!
-        #
-        # If channel #64 is the last CHn channel
-        #   followed by AC1, then the AC1 channel 
-        #   should be 65 to always allow an integer 
-        #   index to each channel and count on
-        #   the user having to use array index
-        #   for non CHn labeled channels.
         for i,c in enumerate(channel_names):
             if c.startswith('CH'):
                 ch_id = int(c.lstrip('CH'))
