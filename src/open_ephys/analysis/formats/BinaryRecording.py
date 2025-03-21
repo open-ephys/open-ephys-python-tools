@@ -225,20 +225,23 @@ class BinaryRecording(Recording):
                     selected_channels = np.array(channel_by_number,
                                                  dtype=np.uint32)
             else:
-                selected_channels = np.arange(self.metadata['num_channels'], dtype=np.uint32)
+                selected_channels = np.arange(self.metadata['num_channels'],
+                                              dtype=np.uint32)
                 selected_channels += 1  # change index to match channel ID
 
             selected_ch = np.array([self.metadata['channel_map'][ch]
                                     for ch in selected_channels],
                                    dtype=np.uint32)
 
-            samples = self.samples[start_sample_index:end_sample_index, selected_ch].astype('float64')
+            samples = self.samples[start_sample_index:end_sample_index,
+                                   selected_ch].astype('float64')
 
             for idx, ch in enumerate(selected_ch):
-                samples[:, idx] = samples[:, idx] * self.metadata['bit_volts'][ch]
+                samples[:, idx] = samples[:, idx] * \
+                  self.metadata['bit_volts'][ch]
 
             return samples
-    
+
     def __init__(self,
                  directory,
                  experiment_index=0,
@@ -256,7 +259,8 @@ class BinaryRecording(Recording):
                                'structure.oebin'), 'r') as oebin_file:
             self.info = json.load(oebin_file)
         self._format = 'binary'
-        self._version = float(".".join(self.info['GUI version'].split('.')[:2]))
+        self._version = \
+            float(".".join(self.info['GUI version'].split('.')[:2]))
         self.sort_events = True
 
     def load_continuous(self):
@@ -339,7 +343,7 @@ class BinaryRecording(Recording):
                                              ignore_index=True,
                                              inplace=True)
                 else:
-                    self._events.sort_values(by=['sample_number','stream_index'], 
+                    self._events.sort_values(by=['sample_number', 'stream_index'], 
                                              ignore_index=True,
                                              inplace=True)
 

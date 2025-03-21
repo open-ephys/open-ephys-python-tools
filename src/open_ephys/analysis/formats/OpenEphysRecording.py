@@ -84,10 +84,6 @@ class OpenEphysRecording(Recording):
             self.metadata['sample_rate'] = info['sample_rate']
             self.metadata['num_channels'] = len(files)
 
-            if selected_channels is None:
-                selected_channels = np.arange(self.selected_channels.size,
-                                              dtype=np.uint32)
-
             self.metadata['channel_names'] = info['channel_names']
             self.metadata['channel_map'] = Recording.create_channel_map(info)
 

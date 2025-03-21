@@ -103,9 +103,14 @@ class Recording(ABC):
     def format(self):
         return self._format
     
-    def __init__(self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True):
+    def __init__(self,
+                 directory,
+                 experiment_index=0,
+                 recording_index=0,
+                 mmap_timestamps=True):
         """ Construct a Recording object, which provides access to
-        data from one recording (start/stop acquisition or start/stop recording)
+        data from one recording (start/stop acquisition or
+        start/stop recording)
 
         Parameters
         ----------
@@ -120,7 +125,6 @@ class Recording(ABC):
         mmap_timestamps : bool
             Determines whether timestamps are memory-mapped
             Set to False if you plan to overwrite the timestamps files
-        
         """
         
         self.directory = directory
