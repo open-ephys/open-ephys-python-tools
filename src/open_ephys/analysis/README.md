@@ -27,6 +27,8 @@ To access the data for the first Record Node, enter:
 recordnode = session.recordnodes[0]
 ```
 
+
+
 If data from multiple Record Nodes is stored in the same directory, you can use the `print` function to view information about the Record Nodes in the `Session` object, e.g.:
 
 ```
@@ -79,7 +81,14 @@ Because the memory-mapped samples are stored as 16-bit integers in arbitrary uni
 >> data = recording.continuous[0].get_samples(start_sample_index=0, end_sample_index=10000)
 ```
 
-This will return the first 10,000 continuous samples for all channels in units of microvolts. Note that your computer may run out of memory when requesting a large number of samples for many channels at once. It's also important to note that `start_sample_index` and `end_sample_index` represent relative indices in the `samples` array, rather than absolute sample numbers.
+This will return the first 10,000 continuous samples for all channels in units of microvolts. Note that your computer may run out of memory when requesting a large number of samples for many channels at once. It's also important to note that `start_sample_index` and `end_sample_index` represent relative indices in the `samples` array, rather than absolute sample numbers. The default behavior is to return all channels in the order in which they are stored, typically in increasing numerical order. However, if the `channel map` plugin is placed in the signal chain before a `record node`, the order of channels will follow the order of the specified channel mapping. 
+
+The `get_samples` method includes the arguments:
+
+- ``start_sample_index``
+- ``end_sample_index``
+- ``selected_channels`` is an optional argument allows channels to be selected via array index in the order stored in the sample array. 
+- ``channel_by_number`` is a keyword-only argument allows channels to be selected by ID to extract specific channels by channel ID number (integers following `CH` in the `oebin` file). If your board has additional ``ADCn`` channels, they are sequentially numbered after reaching the last ``CHnn`` labeled channel. 
 
 ### Using the Open Ephys data format
 
