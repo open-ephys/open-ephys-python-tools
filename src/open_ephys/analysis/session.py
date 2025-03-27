@@ -25,18 +25,17 @@ SOFTWARE.
 import glob
 import os
 
-import warnings
-
 from open_ephys.analysis.recordnode import RecordNode
 from open_ephys.analysis.utils import alphanum_key
 
 
 class Session:
-    """Each 'Session' object represents a top-level directory containing data from
-    one or more Record Nodes.
+    """Each 'Session' object represents a top-level directory containing data
+    from one or more Record Nodes.
 
-    A new directory is automatically started when launching Open Ephys, or after
-    pressing the '+' button in the record options section of the control panel.
+    A new directory is automatically started when launching Open Ephys, or
+    after pressing the '+' button in the record options section of the control
+    panel.
 
     A Session object contains a list of Record Nodes that can be accessed via:
 

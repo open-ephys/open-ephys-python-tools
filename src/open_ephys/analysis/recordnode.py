@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 import os
-import glob
 
 from open_ephys.analysis.formats import (
     OpenEphysRecording,
@@ -69,7 +68,8 @@ class RecordNode:
 
     def _detect_format(self):
         """
-        Internal method used to detect a Record Node's data format upon initialization.
+        Internal method used to detect a Record Node's data format upon
+        initialization.
         """
 
         self.formats = {

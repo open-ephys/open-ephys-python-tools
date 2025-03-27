@@ -56,12 +56,11 @@ class EventListener:
     """
     A class that communicates with the Open Ephys Event Broadcaster plugin.
 
-    See: https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Event-Broadcaster.html
-    for more info.
+    It can be used to receive TTL events and spike times over a network
+    connection.
 
-    It can be used to receive TTL events and spike times over a network connection.
-
-    IMPORTANT: The Event Broadcaster must be configured to send events in "JSON" format.
+    IMPORTANT: The Event Broadcaster must be configured to send events in
+    "JSON" format.
 
     To use, first create an EventListener object:
 

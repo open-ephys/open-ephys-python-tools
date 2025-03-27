@@ -119,8 +119,6 @@ class BinaryRecording(Recording):
             self.metadata["channel_names"] = [
                 ch["channel_name"] for ch in info["channels"]
             ]
-            self.metadata["channel_map"] = Recording.create_channel_map(info)
-
             self.metadata["bit_volts"] = [ch["bit_volts"] for ch in info["channels"]]
 
             data = np.memmap(
@@ -159,8 +157,7 @@ class BinaryRecording(Recording):
             start_sample_index,
             end_sample_index,
             selected_channels=None,
-            *,
-            channel_by_number=None,
+            selected_channel_names=None,
         ):
             """
             Returns samples scaled to microvolts. Converts sample values
@@ -173,19 +170,11 @@ class BinaryRecording(Recording):
             end_sample_index : int
                 Index of the last sample to return
             selected_channels : numpy.ndarray, optional
-                Array index of data to extract. The channel you will be
-                returned is the argument+1 as arrays are zero-indexed.
-                Internally, the channel returned will be looked up as described
-                in ``channel_by_number``.
-            channel_by_number : numpy.ndarray, optional
-                Channel number(s) that you request. The array index is
-                looked up from a dict that translates the channel ID (an
-                interger of version of channel name where ``'CH22' = 22``)
-                to the index of the storage array. Order is kept consistent
-                with the **Channel Map** plugin as recorded in the ``oebin``
-                file. By default, all channels are returned. If you board has
-                additional ``ADCn`` channels, they are sequentially numbered
-                after reaching the last ``CHnn`` labeled channel.
+                Selects a subset of channels to return based on index.
+                If no channels are selected, all channels are returned.
+            selected_channel_names : List[str], optional
+                Selects a subset of channels to return based on name.
+                If no channels are selected, all channels are returned.
 
             Returns
             -------
@@ -193,57 +182,29 @@ class BinaryRecording(Recording):
 
             """
 
-            if selected_channels and channel_by_number:
+            if selected_channels is not None and selected_channel_names is not None:
                 raise ValueError(
-                    "Cannot use both ``selected_channels``"
-                    " and ``channel_by_number`` "
-                    "channel selection methods"
-                )
-            elif selected_channels and not channel_by_number:
-                print(
-                    "WARNING: You are selecting channels by array index, "
-                    "not channel ID!\n"
-                    "         Channel number will be the array index +1 "
-                    "by default\n"
-                    "         Use ``channel_by_number`` keyword to select "
-                    "channels by ID\n"
-                    "           This is important when channel ordering "
-                    "has changed due to\n"
-                    "           the use of the Channel Map plugin."
+                    "Cannot specify both `selected_channels`" +
+                    " and `selected_channel_names` as input arguments"
                 )
 
-                if type(selected_channels) is int:
-                    selected_channels = np.array([selected_channels], dtype=np.uint32)
-                    selected_channels += 1
-                elif isinstance(np.ndarray, type(selected_channels)):
-                    selected_channels += 1
-                else:
-                    selected_channels = np.array(selected_channels, dtype=np.uint32)
-                    selected_channels += 1
-            elif not selected_channels and channel_by_number:
-                if type(channel_by_number) is int:
-                    selected_channels = np.array([channel_by_number], dtype=np.uint32)
-                elif isinstance(np.ndarray, type(channel_by_number)):
-                    pass
-                else:
-                    selected_channels = np.array(channel_by_number, dtype=np.uint32)
-            else:
+            if selected_channels is None and selected_channel_names is None:
                 selected_channels = np.arange(
                     self.metadata["num_channels"], dtype=np.uint32
                 )
-                selected_channels += 1  # change index to match channel ID
 
-            selected_ch = np.array(
-                [self.metadata["channel_map"][ch] for ch in selected_channels],
-                dtype=np.uint32,
-            )
+            if selected_channel_names is not None:
+                selected_channels = [self.metadata['channel_names'].index(value) 
+                                     for value in selected_channel_names]
+                selected_channels = np.array(selected_channels, dtype=np.uint32)
 
             samples = self.samples[
-                start_sample_index:end_sample_index, selected_ch
+                start_sample_index:end_sample_index, selected_channels
             ].astype("float64")
 
-            for idx, ch in enumerate(selected_ch):
-                samples[:, idx] = samples[:, idx] * self.metadata["bit_volts"][ch]
+            for idx, ch in enumerate(selected_channels):
+                samples[:, idx] = samples[:, idx] * \
+                    self.metadata["bit_volts"][ch]
 
             return samples
 

@@ -83,7 +83,11 @@ class NwbRecording(Recording):
             self.global_timestamps = None
 
         def get_samples(
-            self, start_sample_index, end_sample_index, selected_channels=None
+            self,
+            start_sample_index,
+            end_sample_index,
+            selected_channels=None,
+            selected_channel_names=None,
         ):
             """
             Returns samples scaled to microvolts. Converts sample values
@@ -95,9 +99,12 @@ class NwbRecording(Recording):
                 Index of the first sample to return
             end_sample_index : int
                 Index of the last sample to return
-            selected_channels : numpy.ndarray
-                Indices of the channels to return
-                By default, all channels are returned
+            selected_channels : numpy.ndarray, optional
+                Selects a subset of channels to return based on index.
+                If no channels are selected, all channels are returned.
+            selected_channel_names : List[str], optional
+                Selects a subset of channels to return based on name.
+                If no channels are selected, all channels are returned.
 
             Returns
             -------
@@ -105,15 +112,29 @@ class NwbRecording(Recording):
 
             """
 
-            if selected_channels is None:
-                selected_channels = np.arange(self.metadata["num_channels"])
+            if selected_channels is not None and selected_channel_names is not None:
+                raise ValueError(
+                    "Cannot specify both `selected_channels`" +
+                    " and `selected_channel_names` as input arguments"
+                )
+
+            if selected_channels is None and selected_channel_names is None:
+                selected_channels = np.arange(
+                    self.metadata["num_channels"], dtype=np.uint32
+                )
+
+            if selected_channel_names:
+                selected_channels = [self.metadata['channel_names'].index(value) 
+                                     for value in selected_channel_names]
+                selected_channels = np.array(selected_channels, dtype=np.uint32)
 
             samples = self.samples[
                 start_sample_index:end_sample_index, selected_channels
             ].astype("float64")
 
-            for idx, channel in enumerate(selected_channels):
-                samples[:, idx] = samples[:, idx] * self.metadata["bit_volts"][channel]
+            for idx, ch in enumerate(selected_channels):
+                samples[:, idx] = samples[:, idx] * \
+                    self.metadata["bit_volts"][ch]
 
             return samples
 
