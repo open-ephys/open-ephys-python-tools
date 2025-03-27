@@ -30,24 +30,24 @@ import warnings
 from open_ephys.analysis.recordnode import RecordNode
 from open_ephys.analysis.utils import alphanum_key
 
+
 class Session:
-    
     """Each 'Session' object represents a top-level directory containing data from
     one or more Record Nodes.
-    
+
     A new directory is automatically started when launching Open Ephys, or after
     pressing the '+' button in the record options section of the control panel.
-    
+
     A Session object contains a list of Record Nodes that can be accessed via:
-        
+
         session.recordnodes[n]
-        
+
     where N is the index of the Record Node (e.g., 0, 1, 2, ...)
-    
+
     """
-    
+
     def __init__(self, directory, mmap_timestamps=True):
-        """ Construct a session object, which provides access to
+        """Construct a session object, which provides access to
         data from multiple Open Ephys Record Nodes
 
         Parameters
@@ -58,36 +58,42 @@ class Session:
             (default is True). Set to False if you plan to overwrite the
             timestamps files in the session directory.
         """
-        
-        self.directory = directory;
-        self.mmap_timestamps = mmap_timestamps;
-        
+
+        self.directory = directory
+        self.mmap_timestamps = mmap_timestamps
+
         self._detect_record_nodes()
-        
-        
+
     def _detect_record_nodes(self):
         """
         Internal method used to detect Record Nodes upon initialization.
         """
-        
-        recordnodepaths = glob.glob(os.path.join(self.directory, 
-                                             'Record Node *'))
+
+        recordnodepaths = glob.glob(os.path.join(self.directory, "Record Node *"))
         recordnodepaths.sort(key=alphanum_key)
-        
+
         if len(recordnodepaths) == 0:
 
-            self.recordings = RecordNode(self.directory, self.mmap_timestamps).recordings
+            self.recordings = RecordNode(
+                self.directory, self.mmap_timestamps
+            ).recordings
 
         else:
 
-            self.recordnodes = [RecordNode(path, self.mmap_timestamps) for path in recordnodepaths]
+            self.recordnodes = [
+                RecordNode(path, self.mmap_timestamps) for path in recordnodepaths
+            ]
 
     def __str__(self):
         """Returns a string with information about the Session"""
-        
-        return ''.join(["\nOpen Ephys Recording Session Object\n",
-                        "Directory: " + self.directory + "\n\n"
-                        "<object>.recordnodes:\n"] + 
-                        ["  Index " + str(i) + ": " + r.__str__() + "\n" 
-                          for i, r in enumerate(self.recordnodes)])
 
+        return "".join(
+            [
+                "\nOpen Ephys Recording Session Object\n",
+                "Directory: " + self.directory + "\n\n" "<object>.recordnodes:\n",
+            ]
+            + [
+                "  Index " + str(i) + ": " + r.__str__() + "\n"
+                for i, r in enumerate(self.recordnodes)
+            ]
+        )

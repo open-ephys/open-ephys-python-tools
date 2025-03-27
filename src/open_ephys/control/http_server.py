@@ -28,46 +28,45 @@ import subprocess
 
 import requests
 import json
-import time 
+import time
 
 import glob
 
+
 class OpenEphysHTTPServer:
-    
     """
-    A class that communicates with the Open Ephys HTTP Server 
-    
+    A class that communicates with the Open Ephys HTTP Server
+
     See: https://open-ephys.github.io/gui-docs/User-Manual/Remote-control.html for more info.
-    
+
     The server can be used to:
 
         - load configurations
-        - get/set processor parameters 
+        - get/set processor parameters
         - start/stop acquisition
         - start/stop recording
         - close the GUI
-    
+
     To use, first create a OpenEphysHTTPServer object:
-        
+
         >> from open_ephys.control import OpenEphysHTTPServer
         >> gui = OpenEphysHTTPServer() # defaults to localhost, optionally specify an IP address
-        
+
     Then, change or query the GUI's state via object properties and methods:
 
         >> gui.load('/Users/Ephys/Documents/config.xml') # Load a signal chain
-        
+
         >> gui.acquire(10) # Acquire data for 10 seconds and then stop
-        
+
         >> gui.record(3600) # Record data for 1 hour and return to the previous state
-        
+
         >> gui.status() # Get current status ('IDLE', 'ACQUIRE', or 'RECORD')
         'IDLE'
-    
+
     """
 
-    def __init__(self, address='127.0.0.1'):
-        
-        """ 
+    def __init__(self, address="127.0.0.1"):
+        """
         Construct an OpenEphysHTTPServer object
 
         Parameters
@@ -76,11 +75,10 @@ class OpenEphysHTTPServer:
             Defines the base URL address
             Defaults to 127.0.0.1 (localhost)
         """
-        
-        self.address = 'http://' + address + ':37497'
+
+        self.address = "http://" + address + ":37497"
 
     def send(self, endpoint, payload=None):
-
         """
         Send a request to the server.
 
@@ -91,18 +89,17 @@ class OpenEphysHTTPServer:
             Must begin with "/api/"
         payload : Dictionary
             The payload to send with the request.
-            
+
             If a payload is specified, a PUT request
             will be used; otherwise it will be a GET request.
         """
 
-        try: 
+        try:
 
             if payload is None:
                 resp = requests.get(self.address + endpoint)
             else:
-                resp = requests.put(self.address + endpoint, 
-                                    data = json.dumps(payload))
+                resp = requests.put(self.address + endpoint, data=json.dumps(payload))
 
         except requests.exceptions.Timeout:
             # Maybe set up for a retry, or continue in a retry loop
@@ -117,7 +114,6 @@ class OpenEphysHTTPServer:
         return resp.json()
 
     def load(self, config_path):
-
         """
         Load a configuration file.
 
@@ -127,25 +123,21 @@ class OpenEphysHTTPServer:
             The path to the configuration file.
         """
 
-        payload = { 
-            'path' : config_path
-        }
+        payload = {"path": config_path}
 
-        res = self.send('/api/load', payload)
+        res = self.send("/api/load", payload)
         time.sleep(1)
         return res
 
     def get_processor_list(self):
-
         """
         Returns all available processors in the GUI's Processor List
         """
 
-        data = self.send('/api/processors/list')
-        return [processor["name"] for processor in data['processors']]
+        data = self.send("/api/processors/list")
+        return [processor["name"] for processor in data["processors"]]
 
     def get_processors(self, filter_by_name=""):
-
         """
         Get the list of processors.
 
@@ -155,24 +147,22 @@ class OpenEphysHTTPServer:
             Filter the list by processor name.
         """
 
-        data = self.send('/api/processors')
+        data = self.send("/api/processors")
         if filter_by_name == "":
             return data["processors"]
         else:
-            return [x for x in data['processors'] if x['name'] == filter_by_name]
+            return [x for x in data["processors"] if x["name"] == filter_by_name]
 
     def clear_signal_chain(self):
-
         """
         Clear the signal chain.
         """
 
-        data = self.send('/api/processors/clear')
+        data = self.send("/api/processors/clear")
 
         return data
 
     def add_processor(self, name, source=None, dest=None):
-
         """
         Add a processor to the signal chain.
 
@@ -186,24 +176,25 @@ class OpenEphysHTTPServer:
             The 3-digit processor ID of the destination (e.g. 102)
         """
 
-        endpoint = '/api/processors/add'
-        payload = { 'name' : name }
+        endpoint = "/api/processors/add"
+        payload = {"name": name}
 
         # If only processor name is specified, set source to most recently added processor
         if source is None and dest is None:
             if len(self.get_processors()) > 0:
-                payload['source_id'] = max(self.get_processors(), key=lambda processor: processor['id'])['id']
+                payload["source_id"] = max(
+                    self.get_processors(), key=lambda processor: processor["id"]
+                )["id"]
         if source is not None:
-            payload['source_id'] = source
+            payload["source_id"] = source
         if dest is not None:
-            payload['dest_id'] = dest
+            payload["dest_id"] = dest
 
         data = self.send(endpoint, payload)
 
         return data
 
     def delete_processor(self, processor_id):
-
         """
         Delete a processor.
 
@@ -213,17 +204,14 @@ class OpenEphysHTTPServer:
             The 3-digit processor ID (e.g. 101)
         """
 
-        endpoint = '/api/processors/delete'
-        payload = {
-            'id' : processor_id
-        }
+        endpoint = "/api/processors/delete"
+        payload = {"id": processor_id}
 
         data = self.send(endpoint, payload)
 
         return data
 
     def get_parameters(self, processor_id, stream_index):
-
         """
         Get parameters for a stream.
 
@@ -235,13 +223,18 @@ class OpenEphysHTTPServer:
             The index of the stream (e.g. 0).
         """
 
-        endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters'
+        endpoint = (
+            "/api/processors/"
+            + str(processor_id)
+            + "/streams/"
+            + str(stream_index)
+            + "/parameters"
+        )
         data = self.send(endpoint)
 
         return data
 
     def set_parameter(self, processor_id, stream_index, param_name, value):
-
         """
         Update a parameter value
 
@@ -255,7 +248,7 @@ class OpenEphysHTTPServer:
             The parameter name (e.g. low_cut)
         value : Any
             The parameter value (must match the parameter type).
-            Hint: Float parameters must be sent with a decimal 
+            Hint: Float parameters must be sent with a decimal
                 included (e.g. 1000.0 instead of 1000)
 
         Returns
@@ -263,15 +256,19 @@ class OpenEphysHTTPServer:
 
         """
 
-        endpoint = '/api/processors/' + str(processor_id) + '/streams/' + str(stream_index) + '/parameters/' + param_name
-        payload = {
-            'value' : value
-        }
+        endpoint = (
+            "/api/processors/"
+            + str(processor_id)
+            + "/streams/"
+            + str(stream_index)
+            + "/parameters/"
+            + param_name
+        )
+        payload = {"value": value}
         data = self.send(endpoint, payload)
         return data
 
     def get_recording_info(self, key=""):
-
         """
         Get the current recording parameters.
 
@@ -297,7 +294,7 @@ class OpenEphysHTTPServer:
 
         """
 
-        data = self.send('/api/recording')
+        data = self.send("/api/recording")
         if key == "":
             return data
         elif key in data:
@@ -306,7 +303,6 @@ class OpenEphysHTTPServer:
             return "Invalid key"
 
     def set_parent_dir(self, path):
-
         """
         Set the parent directory for recording.
 
@@ -324,14 +320,11 @@ class OpenEphysHTTPServer:
             Current recording parameters
         """
 
-        payload = {
-            'parent_directory' : path
-        }
-        data = self.send('/api/recording', payload)
+        payload = {"parent_directory": path}
+        data = self.send("/api/recording", payload)
         return data
 
     def set_prepend_text(self, text):
-
         """
         Set the prepend text.
 
@@ -346,14 +339,11 @@ class OpenEphysHTTPServer:
             Current recording parameters
         """
 
-        payload = {
-            'prepend_text' : text
-        }
-        data = self.send('/api/recording', payload)
+        payload = {"prepend_text": text}
+        data = self.send("/api/recording", payload)
         return data
 
     def set_base_text(self, text):
-
         """
         Set the base text.
 
@@ -368,14 +358,11 @@ class OpenEphysHTTPServer:
             Current recording parameters
         """
 
-        payload = {
-            'base_text' : text
-        }
-        data = self.send('/api/recording', payload)
+        payload = {"base_text": text}
+        data = self.send("/api/recording", payload)
         return data
 
     def set_append_text(self, text):
-
         """
         Set the append text.
 
@@ -390,14 +377,11 @@ class OpenEphysHTTPServer:
             Current recording parameters
         """
 
-        payload = {
-            'append_text' : text
-        }
-        data = self.send('/api/recording', payload)
+        payload = {"append_text": text}
+        data = self.send("/api/recording", payload)
         return data
 
     def set_start_new_dir(self):
-
         """
         Toggles the creation of a new directory for the next recording.
 
@@ -407,14 +391,11 @@ class OpenEphysHTTPServer:
             Current recording parameters
         """
 
-        payload = {
-            'start_new_directory': "true"
-        }
-        data = self.send('/api/recording', payload)
+        payload = {"start_new_directory": "true"}
+        data = self.send("/api/recording", payload)
         return data
 
     def set_file_path(self, node_id, file_path):
-
         """
         Set the file path of a File Reader.
 
@@ -431,15 +412,12 @@ class OpenEphysHTTPServer:
             Response message
         """
 
-        endpoint = '/api/processors/' + str(node_id) + '/config'
-        payload ={ 
-            'text' : file_path
-        }
+        endpoint = "/api/processors/" + str(node_id) + "/config"
+        payload = {"text": file_path}
         data = self.send(endpoint, payload)
         return data
 
     def set_file_index(self, node_id, file_index):
-
         """
         Set the file index of a File Reader
 
@@ -456,15 +434,12 @@ class OpenEphysHTTPServer:
             Response message
         """
 
-        endpoint = '/api/processors/' + str(node_id) + '/config'
-        payload ={ 
-            'text' : file_index
-        }
+        endpoint = "/api/processors/" + str(node_id) + "/config"
+        payload = {"text": file_index}
         data = self.send(endpoint, payload)
         return data
 
     def set_record_engine(self, node_id, engine):
-
         """
         Set the record engine for a Record Node.
 
@@ -476,15 +451,12 @@ class OpenEphysHTTPServer:
                 The record engine index.
         """
 
-        endpoint = '/api/processors/' + str(node_id) + '/config'
-        payload = { 
-            'text' : engine
-        }
+        endpoint = "/api/processors/" + str(node_id) + "/config"
+        payload = {"text": engine}
         data = self.send(endpoint, payload)
         return data
 
     def set_record_path(self, node_id, directory):
-
         """
         Set the record path for a Record Node
 
@@ -496,22 +468,18 @@ class OpenEphysHTTPServer:
             The record path.
         """
 
-        payload ={ 
-            'parent_directory' : directory
-        }
-        data = self.send('/api/recording/' + str(node_id), payload)
+        payload = {"parent_directory": directory}
+        data = self.send("/api/recording/" + str(node_id), payload)
         return data
 
     def status(self):
-
         """
         Returns the current status of the GUI (IDLE, ACQUIRE, or RECORD)
 
         """
-        return self.send('/api/status')['mode']
+        return self.send("/api/status")["mode"]
 
     def acquire(self, duration=0):
-
         """
         Start acquisition.
 
@@ -531,23 +499,22 @@ class OpenEphysHTTPServer:
 
         """
 
-        payload = { 
-            'mode' : 'ACQUIRE',
+        payload = {
+            "mode": "ACQUIRE",
         }
-        
-        data = self.send('/api/status', payload)
-        
-        if duration: 
+
+        data = self.send("/api/status", payload)
+
+        if duration:
             time.sleep(duration)
-            payload = { 
-                'mode' : 'IDLE',
+            payload = {
+                "mode": "IDLE",
             }
-            data = self.send('/api/status', payload)
-        
-        return data['mode']
+            data = self.send("/api/status", payload)
+
+        return data["mode"]
 
     def record(self, duration=0):
-
         """
         Record data.
 
@@ -564,24 +531,23 @@ class OpenEphysHTTPServer:
 
         previous_mode = self.status()
 
-        payload = { 
-            'mode' : 'RECORD',
+        payload = {
+            "mode": "RECORD",
         }
-        data = self.send('/api/status', payload)
-        
-        if duration: 
+        data = self.send("/api/status", payload)
+
+        if duration:
             time.sleep(duration)
-            payload = { 
-                'mode' : previous_mode,
+            payload = {
+                "mode": previous_mode,
             }
-            data = self.send('/api/status', payload)
-        
-        return data['mode']
+            data = self.send("/api/status", payload)
+
+        return data["mode"]
 
     def idle(self, duration=0):
-
         """
-        Stop acquiring or recording data. 
+        Stop acquiring or recording data.
 
         Parameters
         ----------
@@ -596,21 +562,20 @@ class OpenEphysHTTPServer:
 
         previous_mode = self.status()
 
-        payload = { 
-            'mode' : 'IDLE',
+        payload = {
+            "mode": "IDLE",
         }
-        data = self.send('/api/status', payload)
-        if duration: 
+        data = self.send("/api/status", payload)
+        if duration:
             time.sleep(duration)
-            payload = { 
-                'mode' : previous_mode,
+            payload = {
+                "mode": previous_mode,
             }
-            data = self.send('/api/status', payload)
-        
-        return data['mode']
+            data = self.send("/api/status", payload)
+
+        return data["mode"]
 
     def message(self, message):
-
         """
         Broadcast a message to all processors during acquisition
 
@@ -625,15 +590,12 @@ class OpenEphysHTTPServer:
             Response message
         """
 
-        payload = {
-            'text' : message
-        }
-        data = self.send('/api/message', payload)
+        payload = {"text": message}
+        data = self.send("/api/message", payload)
 
         return data
 
     def config(self, node_id, message):
-
         """
         Send a configuration message to a specific processor
 
@@ -651,28 +613,22 @@ class OpenEphysHTTPServer:
             Response message
         """
 
-        payload = {
-            'text' : message
-        }
-        data = self.send(f'/api/processors/{node_id}/config', payload)
+        payload = {"text": message}
+        data = self.send(f"/api/processors/{node_id}/config", payload)
 
         return data
 
     def quit(self):
-
         """
         Quit the GUI.
         """
 
-        payload = { 
-            'command' : 'quit' 
-        }
-        data = self.send('/api/window', payload)
+        payload = {"command": "quit"}
+        data = self.send("/api/window", payload)
 
         return data
 
     def get_latest_recordings(self, directory, count=1):
-
         """
         Get the latest recordings.
 
@@ -684,7 +640,7 @@ class OpenEphysHTTPServer:
             The number of recordings to return.
         """
         latest_recordings = []
-        list_of_files = glob.glob(os.path.join(directory, '**'))
+        list_of_files = glob.glob(os.path.join(directory, "**"))
 
         while count > 0 and len(list_of_files) > 0:
             latest_file = max(list_of_files, key=os.path.getctime)

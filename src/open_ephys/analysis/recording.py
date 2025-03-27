@@ -22,23 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 from abc import ABC, abstractmethod
 import warnings
-    
+
+
 class Recording(ABC):
-    """ Abstract class representing data from a single Recording
-    
+    """Abstract class representing data from a single Recording
+
     Classes for different data formats should inherit from this class.
-    
+
     Recording objects contain three properties:
         - continuous
         - events
         - spikes
         - messages
-    
+
     which load the underlying data upon access.
-    
+
     continuous is a list of data streams
         - samples (memory-mapped array of dimensions samples x channels)
         - sample_numbers (array of length samples)
@@ -48,7 +48,7 @@ class Recording(ABC):
             - bit_volts
             - source_node_id
             - stream_name
-        
+
     spikes is a list of spike sources
         - waveforms (spikes x channels x samples)
         - sample_numbers (one per sample)
@@ -59,7 +59,7 @@ class Recording(ABC):
             - bit_volts
             - source_node_id
             - stream_name
-        
+
     events is a pandas DataFrame containing six columns:
         - timestamp
         - sample_number
@@ -72,9 +72,9 @@ class Recording(ABC):
         - timestamp
         - sample_number
         - message
-    
+
     """
-    
+
     @property
     def continuous(self):
         if self._continuous is None:
@@ -98,17 +98,15 @@ class Recording(ABC):
         if self._messages is None:
             self.load_messages()
         return self._messages
-    
+
     @property
     def format(self):
         return self._format
-    
-    def __init__(self,
-                 directory,
-                 experiment_index=0,
-                 recording_index=0,
-                 mmap_timestamps=True):
-        """ Construct a Recording object, which provides access to
+
+    def __init__(
+        self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True
+    ):
+        """Construct a Recording object, which provides access to
         data from one recording (start/stop acquisition or
         start/stop recording)
 
@@ -126,27 +124,27 @@ class Recording(ABC):
             Determines whether timestamps are memory-mapped
             Set to False if you plan to overwrite the timestamps files
         """
-        
+
         self.directory = directory
         self.experiment_index = experiment_index
         self.recording_index = recording_index
         self.mmap_timestamps = mmap_timestamps
-        
+
         self._continuous = None
         self._events = None
         self._spikes = None
         self._messages = None
-        
+
         self.sync_lines = []
-        
+
     @abstractmethod
     def load_spikes(self):
         pass
-    
+
     @abstractmethod
     def load_events(self):
         pass
-    
+
     @abstractmethod
     def load_continuous(self):
         pass
@@ -154,30 +152,32 @@ class Recording(ABC):
     @abstractmethod
     def load_messages(self):
         pass
-    
+
     @abstractmethod
     def detect_format(directory):
         """Return True if the format matches the Record Node directory contents"""
         pass
-    
+
     @abstractmethod
     def detect_recordings(directory, mmap_timestamps=True):
         """Finds Recordings within a Record Node directory"""
         pass
-    
+
     @abstractmethod
     def __str__(self):
         """Returns a string with information about the Recording"""
         pass
-    
-    def add_sync_line(self, line, processor_id, stream_name=None, main=False, ignore_intervals=[]):
-        """Specifies an event channel to use for timestamp synchronization. Each 
-        sync line in a recording should receive its input from the same 
+
+    def add_sync_line(
+        self, line, processor_id, stream_name=None, main=False, ignore_intervals=[]
+    ):
+        """Specifies an event channel to use for timestamp synchronization. Each
+        sync line in a recording should receive its input from the same
         physical digital input line.
-        
-        For synchronization to work, there must be one (and only one) 'main' 
+
+        For synchronization to work, there must be one (and only one) 'main'
         sync line, to which all timestamps will be aligned.
-        
+
         Parameters
         ----------
         line : int
@@ -188,63 +188,76 @@ class Recording(ABC):
             name of the stream receiving sync events (eg 'Probe-A-AP')
             default = None
         main : bool
-            if True, this stream's timestamps will be treated as the 
+            if True, this stream's timestamps will be treated as the
             main clock
         ignore_intervals : list of tuples
             intervals to ignore when checking for common events
             default = []
-        
+
         """
 
-        events_on_line = self.events[(self.events.line == line) &
-                                     (self.events.processor_id == processor_id) &
-                                     (self.events.stream_name == stream_name)]
-        
+        events_on_line = self.events[
+            (self.events.line == line)
+            & (self.events.processor_id == processor_id)
+            & (self.events.stream_name == stream_name)
+        ]
 
         if len(events_on_line) == 0:
-            raise Exception('No events found on this line. ' + 
-                            'Check that the processor ID and stream name are correct.')
-        
+            raise Exception(
+                "No events found on this line. "
+                + "Check that the processor ID and stream name are correct."
+            )
+
         if main:
-            existing_main = [sync for sync in self.sync_lines 
-                             if sync['main']]
-            
+            existing_main = [sync for sync in self.sync_lines if sync["main"]]
+
             if len(existing_main) > 0:
-                raise Exception('Another main sync line already exists. ' + 
-                                'To override, add it again with main=False.')
-                
-        matching_node = [sync for sync in self.sync_lines 
-                         if sync['processor_id'] == processor_id and
-                            sync['stream_name'] == stream_name]
-        
+                raise Exception(
+                    "Another main sync line already exists. "
+                    + "To override, add it again with main=False."
+                )
+
+        matching_node = [
+            sync
+            for sync in self.sync_lines
+            if sync["processor_id"] == processor_id
+            and sync["stream_name"] == stream_name
+        ]
+
         if len(matching_node) == 1:
             self.sync_lines.remove(matching_node[0])
-            warnings.warn('Another sync line exists for this processor/stream combination, overwriting.')
+            warnings.warn(
+                "Another sync line exists for this processor/stream combination, overwriting."
+            )
 
-        self.sync_lines.append({'line' : line,
-                                'processor_id' : processor_id,
-                                'stream_name' : stream_name,
-                                'main' : main,
-                                'ignore_intervals' : ignore_intervals})
+        self.sync_lines.append(
+            {
+                "line": line,
+                "processor_id": processor_id,
+                "stream_name": stream_name,
+                "main": main,
+                "ignore_intervals": ignore_intervals,
+            }
+        )
 
-    @staticmethod    
+    @staticmethod
     def create_channel_map(info):
-        """ Create channel map to generate list of channel 
-        names that map to indices. The `channels` key maps 
-        to an (ordered) list of channels with tags of the 
-        form CHn, or ADCn. Notes regarding conversion of 
+        """Create channel map to generate list of channel
+        names that map to indices. The `channels` key maps
+        to an (ordered) list of channels with tags of the
+        form CHn, or ADCn. Notes regarding conversion of
         channel to array index map:
-        
-            The addition of +1 to channels that are not 
-            have repeat indices (with different 
-            leading charactars) is important as it 
-            keeps the channel numbering consistennt 
-            so that channels match their ID, not their 
+
+            The addition of +1 to channels that are not
+            have repeat indices (with different
+            leading charactars) is important as it
+            keeps the channel numbering consistennt
+            so that channels match their ID, not their
             array index!
-            
+
             If channel #64 is the last CHn channel
-            followed by AC1, then the AC1 channel 
-            should be 65 to always allow an integer 
+            followed by AC1, then the AC1 channel
+            should be 65 to always allow an integer
             index to each channel and count on
             the user having to use array index
             for non CHn labeled channels.
@@ -258,17 +271,17 @@ class Recording(ABC):
         channel_map: dict
 
         """
-        channel_names = [ch['channel_name'] for ch in info['channels']]
+        channel_names = [ch["channel_name"] for ch in info["channels"]]
 
         channel_map = {}
-        
-        for i,c in enumerate(channel_names):
-            if c.startswith('CH'):
-                ch_id = int(c.lstrip('CH'))
-            elif c.startswith('ADC'):
-                ch_id = i+1
+
+        for i, c in enumerate(channel_names):
+            if c.startswith("CH"):
+                ch_id = int(c.lstrip("CH"))
+            elif c.startswith("ADC"):
+                ch_id = i + 1
             else:
-                ch_id = i+1
+                ch_id = i + 1
             channel_map[ch_id] = i
 
         return channel_map
@@ -283,123 +296,136 @@ class Recording(ABC):
             if True, overwrite existing timestamps
             if False, add an extra "global_timestamp" column
             default = False
-        
-        """
-        
-        if len(self.sync_lines) == 0:
-            raise Exception('At least two sync lines must be specified ' + 
-                            'using `add_sync_line` before global timestamps ' + 
-                            'can be computed.')
 
-        main_line = [sync for sync in self.sync_lines 
-                             if sync['main']]
-        
-        aux_lines = [sync for sync in self.sync_lines 
-                             if not sync['main']]
-            
+        """
+
+        if len(self.sync_lines) == 0:
+            raise Exception(
+                "At least two sync lines must be specified "
+                + "using `add_sync_line` before global timestamps "
+                + "can be computed."
+            )
+
+        main_line = [sync for sync in self.sync_lines if sync["main"]]
+
+        aux_lines = [sync for sync in self.sync_lines if not sync["main"]]
+
         if len(main_line) == 0:
-            raise Exception('Computing global timestamps requires one ' + 
-                            'main sync line to be specified.')
-            
+            raise Exception(
+                "Computing global timestamps requires one "
+                + "main sync line to be specified."
+            )
+
         main_line = main_line[0]
 
-        main_events = self.events[(self.events.line == main_line['line']) & 
-                   (self.events.processor_id == main_line['processor_id']) & 
-                   (self.events.stream_name == main_line['stream_name']) &
-                   (self.events.state == 1)]
-        
+        main_events = self.events[
+            (self.events.line == main_line["line"])
+            & (self.events.processor_id == main_line["processor_id"])
+            & (self.events.stream_name == main_line["stream_name"])
+            & (self.events.state == 1)
+        ]
+
         # sort by sample number, in case the original timestamps were incorrect
-        main_events = main_events.sort_values(by='sample_number')
+        main_events = main_events.sort_values(by="sample_number")
 
         # remove any events that fall within the ignore intervals
-        for ignore_interval in main_line['ignore_intervals']:
-            main_events = main_events[(main_events.sample_number < ignore_interval[0]) |
-                                      (main_events.sample_number > ignore_interval[1])]
-        
+        for ignore_interval in main_line["ignore_intervals"]:
+            main_events = main_events[
+                (main_events.sample_number < ignore_interval[0])
+                | (main_events.sample_number > ignore_interval[1])
+            ]
+
         main_start_sample = main_events.iloc[0].sample_number
         main_total_samples = main_events.iloc[-1].sample_number - main_start_sample
-        main_line['start'] = main_start_sample
-        main_line['scaling'] = 1
-        main_line['offset'] = main_start_sample
+        main_line["start"] = main_start_sample
+        main_line["scaling"] = 1
+        main_line["offset"] = main_start_sample
 
         for continuous in self.continuous:
 
-            if (continuous.metadata['source_node_id'] == main_line['processor_id']) and \
-               (continuous.metadata['stream_name'] == main_line['stream_name']):
-               main_line['sample_rate'] = continuous.metadata['sample_rate']
-        
-        print(f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))')
+            if (
+                continuous.metadata["source_node_id"] == main_line["processor_id"]
+            ) and (continuous.metadata["stream_name"] == main_line["stream_name"]):
+                main_line["sample_rate"] = continuous.metadata["sample_rate"]
+
+        print(
+            f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))'
+        )
         print(f'  First event sample number: {main_line["start"]}')
-        print(f'  Last event sample number: {main_events.iloc[-1].sample_number}')
-        print(f'  Total sync events: {len(main_events)}')
+        print(f"  Last event sample number: {main_events.iloc[-1].sample_number}")
+        print(f"  Total sync events: {len(main_events)}")
         print(f'  Sample rate: {main_line["sample_rate"]}')
 
         for aux in aux_lines:
-            
-            aux_events = self.events[(self.events.line == aux['line']) &
-                   (self.events.processor_id == aux['processor_id']) &
-                   (self.events.stream_name == aux['stream_name']) &
-                   (self.events.state == 1)]
-            
+
+            aux_events = self.events[
+                (self.events.line == aux["line"])
+                & (self.events.processor_id == aux["processor_id"])
+                & (self.events.stream_name == aux["stream_name"])
+                & (self.events.state == 1)
+            ]
+
             # sort by sample number, in case the original timestamps were incorrect
-            aux_events = aux_events.sort_values(by='sample_number')
+            aux_events = aux_events.sort_values(by="sample_number")
 
             # remove any events that fall within the ignore intervals
-            for ignore_interval in aux['ignore_intervals']:
-                aux_events = aux_events[(aux_events.sample_number < ignore_interval[0]) |
-                                      (aux_events.sample_number > ignore_interval[1])]
-            
+            for ignore_interval in aux["ignore_intervals"]:
+                aux_events = aux_events[
+                    (aux_events.sample_number < ignore_interval[0])
+                    | (aux_events.sample_number > ignore_interval[1])
+                ]
+
             aux_start_sample = aux_events.iloc[0].sample_number
             aux_total_samples = aux_events.iloc[-1].sample_number - aux_start_sample
-            
-            aux['start'] = aux_start_sample
-            aux['scaling'] = main_total_samples / aux_total_samples
-            aux['offset'] = main_start_sample
-            aux['sample_rate'] = main_line['sample_rate']
 
-            print(f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))')
+            aux["start"] = aux_start_sample
+            aux["scaling"] = main_total_samples / aux_total_samples
+            aux["offset"] = main_start_sample
+            aux["sample_rate"] = main_line["sample_rate"]
+
+            print(
+                f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))'
+            )
             print(f'  First event sample number: {aux["start"]}')
-            print(f'  Last event sample number: {aux_events.iloc[-1].sample_number}')
-            print(f'  Total sync events: {len(aux_events)}')
+            print(f"  Last event sample number: {aux_events.iloc[-1].sample_number}")
+            print(f"  Total sync events: {len(aux_events)}")
             print(f'  Scale factor: {aux["scaling"]}')
             print(f'  Actual sample rate: {aux["sample_rate"] / aux["scaling"]}')
 
-        for sync_line in self.sync_lines: # loop through all sync lines
-            
+        for sync_line in self.sync_lines:  # loop through all sync lines
+
             for continuous in self.continuous:
 
-                if (continuous.metadata['source_node_id'] == sync_line['processor_id']) and \
-                   (continuous.metadata['stream_name'] == sync_line['stream_name']):
-                       
-                    continuous.global_timestamps = \
-                        ((continuous.sample_numbers - sync_line['start']) * sync_line['scaling'] \
-                            + sync_line['offset']) 
-                    
-                    global_timestamps = continuous.global_timestamps / sync_line['sample_rate']
-                            
+                if (
+                    continuous.metadata["source_node_id"] == sync_line["processor_id"]
+                ) and (continuous.metadata["stream_name"] == sync_line["stream_name"]):
+
+                    continuous.global_timestamps = (
+                        continuous.sample_numbers - sync_line["start"]
+                    ) * sync_line["scaling"] + sync_line["offset"]
+
+                    global_timestamps = (
+                        continuous.global_timestamps / sync_line["sample_rate"]
+                    )
+
                     if overwrite:
                         continuous.timestamps = global_timestamps
                     else:
                         continuous.global_timestamps = global_timestamps
-                            
-            event_inds = self.events[(self.events.processor_id == sync_line['processor_id']) & 
-                   (self.events.stream_name == sync_line['stream_name'])].index.values
 
-            global_timestamps = (self.events.loc[event_inds].sample_number - sync_line['start']) \
-                                  * sync_line['scaling'] \
-                                   + sync_line['offset']
-                                   
-            global_timestamps = global_timestamps / sync_line['sample_rate']
-            
+            event_inds = self.events[
+                (self.events.processor_id == sync_line["processor_id"])
+                & (self.events.stream_name == sync_line["stream_name"])
+            ].index.values
+
+            global_timestamps = (
+                self.events.loc[event_inds].sample_number - sync_line["start"]
+            ) * sync_line["scaling"] + sync_line["offset"]
+
+            global_timestamps = global_timestamps / sync_line["sample_rate"]
+
             if overwrite:
-                self.events.loc[event_inds, 'timestamp'] = global_timestamps
+                self.events.loc[event_inds, "timestamp"] = global_timestamps
             else:
                 for ind, ts in zip(event_inds, global_timestamps):
-                    self.events.at[ind, 'global_timestamp'] = ts
-    
-                                              
-        
-        
-    
-        
-    
+                    self.events.at[ind, "global_timestamp"] = ts

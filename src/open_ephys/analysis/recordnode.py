@@ -25,26 +25,30 @@ SOFTWARE.
 import os
 import glob
 
-from open_ephys.analysis.formats import OpenEphysRecording, BinaryRecording, NwbRecording
+from open_ephys.analysis.formats import (
+    OpenEphysRecording,
+    BinaryRecording,
+    NwbRecording,
+)
+
 
 class RecordNode:
-    
     """A 'RecordNode' object represents a directory containing data from
     one Open Ephys Record Node.
-    
+
     Each Record Node placed in the signal chain will write data to its own
     directory.
-    
+
     A RecordNode object contains a list of Recordings that can be accessed via:
-        
+
         recordnode.recordings[n]
-        
+
     where N is the index of the Recording (e.g., 0, 1, 2, ...)
-    
+
     """
-    
+
     def __init__(self, directory, mmap_timestamps=True):
-        """ Construct a RecordNode object, which provides access to
+        """Construct a RecordNode object, which provides access to
         data from one Open Ephys Record Node
 
         Parameters
@@ -56,41 +60,41 @@ class RecordNode:
             (default is True). Set to False if you plan to overwrite the
             timestamps files in the session directory.
         """
-        
+
         self.directory = directory
-        
+
         self._detect_format()
-        
+
         self._detect_recordings(mmap_timestamps)
-        
-        
+
     def _detect_format(self):
         """
         Internal method used to detect a Record Node's data format upon initialization.
         """
-        
-        self.formats = {'nwb': NwbRecording,
-                        'binary': BinaryRecording,
-                        'open-ephys': OpenEphysRecording}
-        
+
+        self.formats = {
+            "nwb": NwbRecording,
+            "binary": BinaryRecording,
+            "open-ephys": OpenEphysRecording,
+        }
+
         for format_key in self.formats.keys():
             if self.formats[format_key].detect_format(self.directory):
                 self.format = format_key
                 return
-        
-        raise(IOError('No available data format detected.'))
-        
-        
+
+        raise (IOError("No available data format detected."))
+
     def _detect_recordings(self, mmap_timestamps):
         """
         Internal method used to detect Recordings upon initialization
         """
-        
-        self.recordings = self.formats[self.format].detect_recordings(self.directory, mmap_timestamps)
+
+        self.recordings = self.formats[self.format].detect_recordings(
+            self.directory, mmap_timestamps
+        )
 
     def __str__(self):
         """Returns a string with information about the RecordNode"""
-        
+
         return os.path.basename(self.directory) + " (" + self.format + " format)"
-               
-               

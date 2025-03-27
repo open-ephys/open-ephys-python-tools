@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import glob
 import os
 import pandas as pd
@@ -42,52 +41,51 @@ class OpenEphysRecording(Recording):
         def __init__(self, info, directory, recording_index):
 
             self.metadata = {}
-            self.metadata['name'] = info['name']
-            self.metadata['stream_name'] = info['stream_name']
+            self.metadata["name"] = info["name"]
+            self.metadata["stream_name"] = info["stream_name"]
 
-            self.sample_numbers, self.waveforms, header = \
-                load(os.path.join(directory, info['filename']),
-                     recording_index)
+            self.sample_numbers, self.waveforms, header = load(
+                os.path.join(directory, info["filename"]), recording_index
+            )
 
-            self.waveforms = self.waveforms.astype('float64') * \
-                info['bit_volts']
+            self.waveforms = self.waveforms.astype("float64") * info["bit_volts"]
 
-            self.metadata['sample_rate'] = float(header['sampleRate'])
-            self.metadata['num_channels'] = int(info['num_channels'])
+            self.metadata["sample_rate"] = float(header["sampleRate"])
+            self.metadata["num_channels"] = int(info["num_channels"])
 
     class Continuous:
-        
+
         def __init__(self, info, files, recording_index):
-            
-            self.name = files[0].strip().split('_')[-2]
+
+            self.name = files[0].strip().split("_")[-2]
             self.files = files
-            self.timestamps_file = info['timestamps_file']
+            self.timestamps_file = info["timestamps_file"]
             self.recording_index = recording_index
-            self._sample_numbers_internal, _, _, self.valid_records = \
-                load(files[0], recording_index)
+            self._sample_numbers_internal, _, _, self.valid_records = load(
+                files[0], recording_index
+            )
             self.global_timestamps = None
 
             self.reload_required = False
             self._samples = None
             self.sample_numbers = self._sample_numbers_internal
-            self.sample_range = [self.sample_numbers[0],
-                                 self.sample_numbers[-1]+1]
+            self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1] + 1]
             self.selected_channels = np.arange(len(files))
 
             self.metadata = {}
 
-            self.metadata['source_node_id'] = int(info['source_node_id'])
-            self.metadata['source_node_name'] = info['source_node_name']
+            self.metadata["source_node_id"] = int(info["source_node_id"])
+            self.metadata["source_node_name"] = info["source_node_name"]
 
-            self.metadata['stream_name'] = info['stream_name']
+            self.metadata["stream_name"] = info["stream_name"]
 
-            self.metadata['sample_rate'] = info['sample_rate']
-            self.metadata['num_channels'] = len(files)
+            self.metadata["sample_rate"] = info["sample_rate"]
+            self.metadata["num_channels"] = len(files)
 
-            self.metadata['channel_names'] = info['channel_names']
-            self.metadata['channel_map'] = Recording.create_channel_map(info)
+            self.metadata["channel_names"] = info["channel_names"]
+            self.metadata["channel_map"] = Recording.create_channel_map(info)
 
-            self.metadata['bit_volts'] = info['bit_volts']
+            self.metadata["bit_volts"] = info["bit_volts"]
 
             self._load_timestamps()
 
@@ -100,12 +98,14 @@ class OpenEphysRecording(Recording):
                 self.reload_required = False
             return self._samples
 
-        def get_samples(self,
-                        start_sample_index,
-                        end_sample_index,
-                        selected_channels=None,
-                        *,
-                        channel_by_number=None):
+        def get_samples(
+            self,
+            start_sample_index,
+            end_sample_index,
+            selected_channels=None,
+            *,
+            channel_by_number=None,
+        ):
             """
             Returns samples scaled to microvolts. Converts sample values
             from 16-bit integers to 64-bit floats.
@@ -141,54 +141,56 @@ class OpenEphysRecording(Recording):
             """
 
             if selected_channels and channel_by_number:
-                raise ValueError("Cannot use both ``selected_channels`` and "
-                                 "``channel_by_number`` "
-                                 "channel selection methods")
+                raise ValueError(
+                    "Cannot use both ``selected_channels`` and "
+                    "``channel_by_number`` "
+                    "channel selection methods"
+                )
             elif selected_channels and not channel_by_number:
-                print("WARNING: You are selecting channels by array index, "
-                      "not channel ID!\n"
-                      "         Channel number will be the array index +1 "
-                      "by default\n"
-                      "         Use ``channel_by_number`` keyword to select "
-                      "channels by ID\n"
-                      "           This is important when channel ordering has "
-                      "changed due to\n"
-                      "           the use of the Channel Map plugin.")
+                print(
+                    "WARNING: You are selecting channels by array index, "
+                    "not channel ID!\n"
+                    "         Channel number will be the array index +1 "
+                    "by default\n"
+                    "         Use ``channel_by_number`` keyword to select "
+                    "channels by ID\n"
+                    "           This is important when channel ordering has "
+                    "changed due to\n"
+                    "           the use of the Channel Map plugin."
+                )
 
                 if type(selected_channels) is int:
-                    selected_channels = np.array([selected_channels],
-                                                 dtype=np.uint32)
+                    selected_channels = np.array([selected_channels], dtype=np.uint32)
                     selected_channels += 1
                 elif isinstance(np.ndarray, type(selected_channels)):
                     selected_channels += 1
                 else:
-                    selected_channels = np.array(selected_channels, 
-                                                 dtype=np.uint32)
+                    selected_channels = np.array(selected_channels, dtype=np.uint32)
                     selected_channels += 1
             elif not selected_channels and channel_by_number:
                 if type(channel_by_number) is int:
-                    selected_channels = np.array([channel_by_number],
-                                                 dtype=np.uint32)
-                elif isinstance(np.ndarray,
-                                type(channel_by_number)):
+                    selected_channels = np.array([channel_by_number], dtype=np.uint32)
+                elif isinstance(np.ndarray, type(channel_by_number)):
                     pass
                 else:
-                    selected_channels = np.array(channel_by_number,
-                                                 dtype=np.uint32)
+                    selected_channels = np.array(channel_by_number, dtype=np.uint32)
             else:
-                selected_channels = np.arange(self.metadata['num_channels'],
-                                              dtype=np.uint32)
+                selected_channels = np.arange(
+                    self.metadata["num_channels"], dtype=np.uint32
+                )
                 selected_channels += 1  # change index to match channel ID
 
-            selected_ch = np.array([self.metadata['channel_map'][ch] for ch in 
-                                    selected_channels], dtype=np.uint32)
+            selected_ch = np.array(
+                [self.metadata["channel_map"][ch] for ch in selected_channels],
+                dtype=np.uint32,
+            )
 
-            samples = self.samples[start_sample_index:end_sample_index,
-                                   selected_ch].astype('float64')
+            samples = self.samples[
+                start_sample_index:end_sample_index, selected_ch
+            ].astype("float64")
 
             for idx, ch in enumerate(selected_ch):
-                samples[:, idx] = samples[:, idx] * \
-                    self.metadata['bit_volts'][ch]
+                samples[:, idx] = samples[:, idx] * self.metadata["bit_volts"][ch]
 
             return samples
 
@@ -260,39 +262,36 @@ class OpenEphysRecording(Recording):
 
             for file_idx in self.selected_channels:
 
-                if os.path.splitext(self.files[file_idx])[1] == '.continuous':
-                    sample_numbers, samples, _, _ = \
-                        load_continuous(self.files[file_idx],
-                                        self.recording_index,
-                                        self.sample_range[0],
-                                        self.sample_range[1])
+                if os.path.splitext(self.files[file_idx])[1] == ".continuous":
+                    sample_numbers, samples, _, _ = load_continuous(
+                        self.files[file_idx],
+                        self.recording_index,
+                        self.sample_range[0],
+                        self.sample_range[1],
+                    )
 
                     self._samples[:, channel_idx] = samples
                     channel_idx += 1
 
             self.sample_numbers = sample_numbers
 
-            start = np.searchsorted(self._sample_numbers_internal,
-                                    self.sample_range[0])
-            end = np.searchsorted(self._sample_numbers_internal,
-                                  self.sample_range[1])
+            start = np.searchsorted(self._sample_numbers_internal, self.sample_range[0])
+            end = np.searchsorted(self._sample_numbers_internal, self.sample_range[1])
             self.timestamps = self._timestamps_internal[start:end]
 
         def _load_timestamps(self):
 
-            data = np.memmap(self.timestamps_file,
-                             dtype='<f8',
-                             offset=0,
-                             mode='r')[self.valid_records]
+            data = np.memmap(self.timestamps_file, dtype="<f8", offset=0, mode="r")[
+                self.valid_records
+            ]
             data = np.append(data, 2 * data[-1] - data[-2])
 
             self._timestamps_internal = []
 
-            for i in range(len(data)-1):
-                self._timestamps_internal.extend(np.linspace(data[i],
-                                                             data[i+1],
-                                                             1024,
-                                                             endpoint=True))
+            for i in range(len(data) - 1):
+                self._timestamps_internal.extend(
+                    np.linspace(data[i], data[i + 1], 1024, endpoint=True)
+                )
 
             self.timestamps = self._timestamps_internal
 
@@ -303,23 +302,24 @@ class OpenEphysRecording(Recording):
         if experiment_index == 0:
             self.experiment_id = ""
         else:
-            self.experiment_id = "_" + str(experiment_index+1)
+            self.experiment_id = "_" + str(experiment_index + 1)
 
-        self.experiment_info = os.path.join(directory, 'structure' +
-                                            self.experiment_id + '.openephys')
+        self.experiment_info = os.path.join(
+            directory, "structure" + self.experiment_id + ".openephys"
+        )
 
         if not os.path.exists(self.experiment_info):
-            self.experiment_info = os.path.join(directory,
-                                                'Continuous_Data' +
-                                                self.experiment_id +
-                                                '.openephys')
+            self.experiment_info = os.path.join(
+                directory, "Continuous_Data" + self.experiment_id + ".openephys"
+            )
 
-        self._format = 'open-ephys'
+        self._format = "open-ephys"
 
     def load_continuous(self):
 
-        continuous_files, stream_indexes, unique_stream_indexes, stream_info =\
+        continuous_files, stream_indexes, unique_stream_indexes, stream_info = (
             self.find_continuous_files()
+        )
         self._continuous = []
 
         for stream_index in unique_stream_indexes:
@@ -327,12 +327,13 @@ class OpenEphysRecording(Recording):
             files_for_stream = []
             for ind, filename in enumerate(continuous_files):
                 if stream_indexes[ind] == stream_index:
-                    files_for_stream.append(os.path.join(self.directory, 
-                                                         filename))
+                    files_for_stream.append(os.path.join(self.directory, filename))
 
-            self._continuous.append(self.Continuous(stream_info[stream_index],
-                                                    files_for_stream,
-                                                    self.recording_index))
+            self._continuous.append(
+                self.Continuous(
+                    stream_info[stream_index], files_for_stream, self.recording_index
+                )
+            )
 
     def load_spikes(self):
 
@@ -340,9 +341,12 @@ class OpenEphysRecording(Recording):
 
         if spike_file_info:
             self._spikes = []
-            self._spikes.extend([self.Spikes(info, self.directory,
-                                             self.recording_index)
-                                for info in spike_file_info])
+            self._spikes.extend(
+                [
+                    self.Spikes(info, self.directory, self.recording_index)
+                    for info in spike_file_info
+                ]
+            )
         else:
             self._spikes = None
 
@@ -354,51 +358,55 @@ class OpenEphysRecording(Recording):
         events = []
 
         for recording_index, child in enumerate(root):
-            if (recording_index == self.recording_index):
+            if recording_index == self.recording_index:
                 for stream_index, stream in enumerate(child):
                     for file_index, file in enumerate(stream):
-                        if file.tag == 'EVENTS':
-                            filename = file.get('filename')
-                            stream_name_pre = filename.replace('_', '.')
-                            stream_name = stream_name_pre.split('.')[1]
-                            sample_number, processor_id, state, channel, header = \
-                                load(os.path.join(self.directory,
-                                                  file.get('filename')),
-                                     self.recording_index)
+                        if file.tag == "EVENTS":
+                            filename = file.get("filename")
+                            stream_name_pre = filename.replace("_", ".")
+                            stream_name = stream_name_pre.split(".")[1]
+                            sample_number, processor_id, state, channel, header = load(
+                                os.path.join(self.directory, file.get("filename")),
+                                self.recording_index,
+                            )
                             events.append(
                                 pd.DataFrame(
-                                    data={'line': channel + 1,
-                                          'sample_number': sample_number,
-                                          'processor_id': processor_id,
-                                          'stream_index': [stream_index] * len(sample_number),
-                                          'stream_name': [stream_name] * len(sample_number),
-                                          'state': state}))
+                                    data={
+                                        "line": channel + 1,
+                                        "sample_number": sample_number,
+                                        "processor_id": processor_id,
+                                        "stream_index": [stream_index]
+                                        * len(sample_number),
+                                        "stream_name": [stream_name]
+                                        * len(sample_number),
+                                        "state": state,
+                                    }
+                                )
+                            )
 
-        self._events = pd.concat(events).sort_values(by=['sample_number',
-                                                         'stream_index'],
-                                                     ignore_index=True)
+        self._events = pd.concat(events).sort_values(
+            by=["sample_number", "stream_index"], ignore_index=True
+        )
 
     def load_messages(self):
 
         if len(self.experiment_id) == 0:
-            messages_file = os.path.join(self.directory,
-                                         'messages' + '.events')
+            messages_file = os.path.join(self.directory, "messages" + ".events")
         else:
-            messages_file = os.path.join(self.directory,
-                                         'messages_' +
-                                         str(self.experiment_id) +
-                                         '.events')
+            messages_file = os.path.join(
+                self.directory, "messages_" + str(self.experiment_id) + ".events"
+            )
 
-        df = pd.read_csv(messages_file,
-                         header=None,
-                         names=['timestamp', 'message'])
-        splits = np.where(df.message ==
-                          (' Software Time (milliseconds since midnight ' +
-                           'Jan 1st 1970 UTC)'))[0]
+        df = pd.read_csv(messages_file, header=None, names=["timestamp", "message"])
+        splits = np.where(
+            df.message
+            == (" Software Time (milliseconds since midnight " + "Jan 1st 1970 UTC)")
+        )[0]
         splits = np.concatenate((splits, np.array([len(df)])))
 
-        self._messages = df.iloc[splits[self.recording_index] +
-                                 1:splits[self.recording_index+1]]
+        self._messages = df.iloc[
+            splits[self.recording_index] + 1 : splits[self.recording_index + 1]
+        ]
 
     def find_continuous_files(self):
 
@@ -411,29 +419,29 @@ class OpenEphysRecording(Recording):
         stream_info = []
 
         for recording_index, child in enumerate(root):
-            if (recording_index == self.recording_index):
+            if recording_index == self.recording_index:
                 for stream_index, stream in enumerate(child):
                     unique_stream_indexes.append(stream_index)
 
                     info = {}
 
-                    info['stream_name'] = stream.get('name')
-                    info['source_node_id'] = stream.get('source_node_id')
-                    info['source_node_name'] = stream.get('source_node_name')
-                    info['sample_rate'] = float(stream.get('sample_rate'))
-                    info['channel_names'] = []
-                    info['bit_volts'] = []
+                    info["stream_name"] = stream.get("name")
+                    info["source_node_id"] = stream.get("source_node_id")
+                    info["source_node_name"] = stream.get("source_node_name")
+                    info["sample_rate"] = float(stream.get("sample_rate"))
+                    info["channel_names"] = []
+                    info["bit_volts"] = []
 
                     for file_index, file in enumerate(stream):
-                        if file.tag == 'CHANNEL':
-                            continuous_files.append(file.get('filename'))
-                            info['channel_names'].append(file.get('name'))
-                            info['bit_volts'].append(float(file.get('bitVolts')))
+                        if file.tag == "CHANNEL":
+                            continuous_files.append(file.get("filename"))
+                            info["channel_names"].append(file.get("name"))
+                            info["bit_volts"].append(float(file.get("bitVolts")))
                             stream_indexes.append(stream_index)
-                        elif file.tag == 'TIMESTAMPS':
-                            info['timestamps_file'] = \
-                                os.path.join(self.directory,
-                                             file.get('filename'))
+                        elif file.tag == "TIMESTAMPS":
+                            info["timestamps_file"] = os.path.join(
+                                self.directory, file.get("filename")
+                            )
 
                     stream_info.append(info)
 
@@ -449,18 +457,20 @@ class OpenEphysRecording(Recording):
         unique_stream_indexes = []
 
         for recording_index, child in enumerate(root):
-            if (recording_index == self.recording_index):
+            if recording_index == self.recording_index:
                 for stream_index, stream in enumerate(child):
                     unique_stream_indexes.append(stream_index)
                     for file_index, file in enumerate(stream):
-                        if file.tag == 'SPIKECHANNEL':
-                            info = {'filename': file.get('filename'),
-                                    'name': file.get('name'),
-                                    'stream_name': stream.get('name'),
-                                    'source_node_id': int(stream.get('source_node_id')),
-                                    'source_node_name': stream.get('source_node_name'),
-                                    'bit_volts': float(file.get('bitVolts')),
-                                    'num_channels': int(file.get('num_channels'))}
+                        if file.tag == "SPIKECHANNEL":
+                            info = {
+                                "filename": file.get("filename"),
+                                "name": file.get("name"),
+                                "stream_name": stream.get("name"),
+                                "source_node_id": int(stream.get("source_node_id")),
+                                "source_node_name": stream.get("source_node_name"),
+                                "bit_volts": float(file.get("bitVolts")),
+                                "num_channels": int(file.get("num_channels")),
+                            }
                             spike_file_info.append(info)
                             stream_indexes.append(stream_index)
 
@@ -469,18 +479,27 @@ class OpenEphysRecording(Recording):
     def __str__(self):
         """Returns a string with information about the Recording"""
 
-        return "Open Ephys GUI Recording\n" + \
-                "ID: " + hex(id(self)) + '\n' + \
-                "Format: Open Ephys\n" + \
-                "Directory: " + self.directory + "\n" + \
-                "Experiment Index: " + str(self.experiment_index) + "\n" + \
-                "Recording Index: " + str(self.recording_index)
+        return (
+            "Open Ephys GUI Recording\n"
+            + "ID: "
+            + hex(id(self))
+            + "\n"
+            + "Format: Open Ephys\n"
+            + "Directory: "
+            + self.directory
+            + "\n"
+            + "Experiment Index: "
+            + str(self.experiment_index)
+            + "\n"
+            + "Recording Index: "
+            + str(self.recording_index)
+        )
 
     ###############################################################
 
     @staticmethod
     def detect_format(directory):
-        open_ephys_files = glob.glob(os.path.join(directory, '*.events'))
+        open_ephys_files = glob.glob(os.path.join(directory, "*.events"))
 
         if len(open_ephys_files) > 0:
             return True
@@ -492,8 +511,7 @@ class OpenEphysRecording(Recording):
 
         recordings = []
 
-        experiment_info = glob.glob(os.path.join(directory,
-                                                 'structure*.openephys'))
+        experiment_info = glob.glob(os.path.join(directory, "structure*.openephys"))
         experiment_info.sort()
 
         for experiment_index, file_name in enumerate(experiment_info):
@@ -501,30 +519,30 @@ class OpenEphysRecording(Recording):
             tree = XmlElementTree.parse(file_name)
             root = tree.getroot()
             for recording_index, child in enumerate(root):
-                recordings.append(OpenEphysRecording(directory,
-                                                     experiment_index,
-                                                     recording_index))
-  
+                recordings.append(
+                    OpenEphysRecording(directory, experiment_index, recording_index)
+                )
+
         return recordings
 
     @staticmethod
     def create_openephys_file(
-            output_path,
-            stream_name="example_data",
-            channel_count=16,
-            sample_rate=30000.,
-            bit_volts=0.195):
-
+        output_path,
+        stream_name="example_data",
+        channel_count=16,
+        sample_rate=30000.0,
+        bit_volts=0.195,
+    ):
         """
         Generates structure.openephys (XML) file for one data stream
 
-        A minimal directory structure for the Open Ephys format looks 
+        A minimal directory structure for the Open Ephys format looks
         like this:
 
         data-directory/
             *.continuous files
             *.events files
-            *.spikes files 
+            *.spikes files
             *.timestamps files
             structure.openephys
 
@@ -547,8 +565,7 @@ class OpenEphysRecording(Recording):
         from xml.dom import minidom
 
         experiment = Element("EXPERIMENT")
-        experiment.attrib = {"format_version": "0.6",
-                             "number": "1"}
+        experiment.attrib = {"format_version": "0.6", "number": "1"}
 
         source_node_id = 100
 
@@ -556,20 +573,23 @@ class OpenEphysRecording(Recording):
         recording.attrib = {"number": "1"}
 
         stream = SubElement(recording, "STREAM")
-        stream.attrib = {"name": stream_name,
-                         "sample_rate": str(sample_rate),
-                         "source_node_id": str(source_node_id)}
+        stream.attrib = {
+            "name": stream_name,
+            "sample_rate": str(sample_rate),
+            "source_node_id": str(source_node_id),
+        }
 
         prefix = "_".join([str(source_node_id), stream_name])
 
         for i in range(channel_count):
             channel = SubElement(stream, "CHANNEL")
-            name = "CH" + str(i+1)
-            channel.attrib = {"name": name,
-                              "bitVolts": str(bit_volts),
-                              "filename": "_".join([prefix, name +
-                                                    '.continuous']),
-                              "position": "1024.0"}
+            name = "CH" + str(i + 1)
+            channel.attrib = {
+                "name": name,
+                "bitVolts": str(bit_volts),
+                "filename": "_".join([prefix, name + ".continuous"]),
+                "position": "1024.0",
+            }
 
         events = SubElement(stream, "EVENTS")
         events.attrib = {"filename": prefix + ".events"}
@@ -579,6 +599,6 @@ class OpenEphysRecording(Recording):
 
         dom = minidom.parseString(tostring(experiment))
 
-        with open(os.path.join(output_path, "structure.openephys"), 'wb') as f:
-            f.write(dom.toprettyxml(indent='  ', encoding="UTF-8"))
+        with open(os.path.join(output_path, "structure.openephys"), "wb") as f:
+            f.write(dom.toprettyxml(indent="  ", encoding="UTF-8"))
             f.close()
