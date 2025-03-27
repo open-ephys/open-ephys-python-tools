@@ -87,8 +87,8 @@ The `get_samples` method includes the arguments:
 
 - ``start_sample_index``
 - ``end_sample_index``
-- ``selected_channels`` is an optional argument allows channels to be selected via array index in the order stored in the sample array. 
-- ``channel_by_number`` is a keyword-only argument allows channels to be selected by ID to extract specific channels by channel ID number (integers following `CH` in the `oebin` file). If your board has additional ``ADCn`` channels, they are sequentially numbered after reaching the last ``CHnn`` labeled channel. 
+- ``selected_channels`` is an optional argument that allows a subset of channels to be selected based on their index.
+- ``channel_by_number`` is an optional argument that allows a subset of channels to be selected by name.
 
 ### Using the Open Ephys data format
 
