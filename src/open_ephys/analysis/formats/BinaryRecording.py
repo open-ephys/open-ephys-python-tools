@@ -49,7 +49,7 @@ class Continuous:
 
         self.metadata = ContinuousMetadata(
             source_node_id=info["source_processor_id"],
-            source_node_name=info["source_node_name"],
+            source_node_name=info["source_processor_name"],
             stream_name=info["stream_name"]
             if version >= 0.6
             else str(info["source_processor_sub_dx"]),
