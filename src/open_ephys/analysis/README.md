@@ -72,7 +72,7 @@ Each `continuous` object has four properties:
 - `samples` - a `numpy.ndarray` that holds the actual continuous data with dimensions of samples x channels. For Binary, NWB, and Kwik format, this will be a memory-mapped array (i.e., the data will only be loaded into memory when specific samples are accessed).
 - `sample_numbers` - a `numpy.ndarray` that holds the sample numbers since the start of acquisition. This will have the same size as the first dimension of the `samples` array
 - `timestamps` - a `numpy.ndarray` that holds global timestamps (in seconds) for each sample, assuming all data streams were synchronized in this recording. This will have the same size as the first dimension of the `samples` array
-- `metadata` - a `dict` containing information about this data, such as the ID of the processor it originated from.
+- `metadata` - a `ContinousMetadata` dataclass containing information about this data, such as the ID of the processor it originated from.
 
 Because the memory-mapped samples are stored as 16-bit integers in arbitrary units, all analysis should be done on a scaled version of these samples. To load the samples scaled to microvolts, use the `get_samples()` method:
 
@@ -124,7 +124,7 @@ If spike data has been saved by your Record Node (i.e., there is a Spike Detecto
 - `sample_numbers` - `numpy.ndarray` of sample indices (one per spikes)
 - `timestamps` - `numpy.ndarray` of global timestamps (in seconds)
 - `clusters` - `numpy.ndarray` of cluster IDs for each spike (default cluster = 0)
-- `metadata` - `dict` with metadata about each electrode
+- `metadata` - `SpikeMetadata` dataclass with metadata about each electrode
 
 ## Synchronizing timestamps
 

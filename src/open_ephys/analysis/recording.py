@@ -23,7 +23,30 @@ SOFTWARE.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any
 import warnings
+
+
+@dataclass
+class SpikeMetadata:
+    name: str
+    stream_name: str
+    sample_rate: float
+    num_channels: int
+
+
+@dataclass
+class ContinuousMetadata:
+    source_node_id: int
+    source_node_name: str
+    stream_name: str
+    sample_rate: float
+    num_channels: int
+    channel_names: list[str] | None
+    bit_volts: list[float]
+    # channel_map: Any | None = None
+
 
 
 class Recording(ABC):
@@ -104,7 +127,11 @@ class Recording(ABC):
         return self._format
 
     def __init__(
-        self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True
+        self,
+        directory: str,
+        experiment_index: int = 0,
+        recording_index: int = 0,
+        mmap_timestamps: bool = True,
     ):
         """Construct a Recording object, which provides access to
         data from one recording (start/stop acquisition or
@@ -297,22 +324,20 @@ class Recording(ABC):
         main_line["offset"] = main_start_sample
 
         for continuous in self.continuous:
-
             if (
                 continuous.metadata["source_node_id"] == main_line["processor_id"]
             ) and (continuous.metadata["stream_name"] == main_line["stream_name"]):
                 main_line["sample_rate"] = continuous.metadata["sample_rate"]
 
         print(
-            f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))'
+            f"Processor ID: {main_line['processor_id']}, Stream Name: {main_line['stream_name']}, Line: {main_line['line']} (main sync line))"
         )
-        print(f'  First event sample number: {main_line["start"]}')
+        print(f"  First event sample number: {main_line['start']}")
         print(f"  Last event sample number: {main_events.iloc[-1].sample_number}")
         print(f"  Total sync events: {len(main_events)}")
-        print(f'  Sample rate: {main_line["sample_rate"]}')
+        print(f"  Sample rate: {main_line['sample_rate']}")
 
         for aux in aux_lines:
-
             aux_events = self.events[
                 (self.events.line == aux["line"])
                 & (self.events.processor_id == aux["processor_id"])
@@ -339,22 +364,19 @@ class Recording(ABC):
             aux["sample_rate"] = main_line["sample_rate"]
 
             print(
-                f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))'
+                f"Processor ID: {aux['processor_id']}, Stream Name: {aux['stream_name']}, Line: {main_line['line']} (aux sync line))"
             )
-            print(f'  First event sample number: {aux["start"]}')
+            print(f"  First event sample number: {aux['start']}")
             print(f"  Last event sample number: {aux_events.iloc[-1].sample_number}")
             print(f"  Total sync events: {len(aux_events)}")
-            print(f'  Scale factor: {aux["scaling"]}')
-            print(f'  Actual sample rate: {aux["sample_rate"] / aux["scaling"]}')
+            print(f"  Scale factor: {aux['scaling']}")
+            print(f"  Actual sample rate: {aux['sample_rate'] / aux['scaling']}")
 
         for sync_line in self.sync_lines:  # loop through all sync lines
-
             for continuous in self.continuous:
-
                 if (
                     continuous.metadata["source_node_id"] == sync_line["processor_id"]
                 ) and (continuous.metadata["stream_name"] == sync_line["stream_name"]):
-
                     continuous.global_timestamps = (
                         continuous.sample_numbers - sync_line["start"]
                     ) * sync_line["scaling"] + sync_line["offset"]

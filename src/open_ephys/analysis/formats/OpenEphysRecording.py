@@ -31,228 +31,224 @@ import xml.etree.ElementTree as XmlElementTree
 
 from open_ephys.analysis.formats.helpers import load, load_continuous
 
-from open_ephys.analysis.recording import Recording
+from open_ephys.analysis.recording import ContinuousMetadata, Recording, SpikeMetadata
 
+class Spikes:
+
+    def __init__(self, info: dict, directory: str, recording_index: int):
+
+        self.sample_numbers, self.waveforms, header = load(
+            os.path.join(directory, info["filename"]), recording_index
+        ) 
+
+        self.metadata = SpikeMetadata(
+            name=info["name"],
+            stream_name=info["stream_name"],
+            sample_rate=float(header["sampleRate"]),
+            num_channels=int(info["num_channels"]),
+        ) 
+        self.waveforms = self.waveforms.astype("float64") * info["bit_volts"]
+
+class Continuous:
+
+    def __init__(self, info: dict, files: list[str], recording_index: int):
+
+        self.name = files[0].strip().split("_")[-2]
+        self.files = files
+        self.timestamps_file = info["timestamps_file"]
+        self.recording_index = recording_index
+        self._sample_numbers_internal, _, _, self.valid_records = load(
+            files[0], recording_index
+        )
+        self.global_timestamps = None
+
+        self.reload_required = False
+        self._samples = None
+        self.sample_numbers = self._sample_numbers_internal
+        self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1] + 1]
+        self.selected_channels = np.arange(len(files))
+
+        self.metadata = ContinuousMetadata(
+            source_node_id=int(info["source_node_id"]),
+            source_node_name=info["source_node_name"],
+            stream_name=info["stream_name"],
+            sample_rate=info["sample_rate"],
+            num_channels=len(files),
+            channel_names=info["channel_names"],
+            bit_volts=info["bit_volts"],
+        )
+        self._load_timestamps()
+
+        self.global_timestamps = None
+
+    @property
+    def samples(self):
+        if self._samples is None or self.reload_required:
+            self._load_samples()
+            self.reload_required = False
+        return self._samples
+
+    def get_samples(
+        self,
+        start_sample_index,
+        end_sample_index,
+        selected_channels=None,
+        selected_channel_names=None,
+    ):
+        """
+        Returns samples scaled to microvolts. Converts sample values
+        from 16-bit integers to 64-bit floats.
+
+        Parameters
+        ----------
+        start_sample_index : int
+            Index of the first sample to return
+        end_sample_index : int
+            Index of the last sample to return
+        selected_channels : numpy.ndarray, optional
+            Selects a subset of channels to return based on index.
+            If no channels are selected, all channels are returned.
+        selected_channel_names : List[str], optional
+            Selects a subset of channels to return based on name.
+            If no channels are selected, all channels are returned.
+
+        Returns
+        -------
+        samples : numpy.ndarray (float64)
+
+        """
+
+        if selected_channels is not None and selected_channel_names is not None:
+            raise ValueError(
+                "Cannot specify both `selected_channels`" +
+                " and `selected_channel_names` as input arguments"
+            )
+
+        if selected_channels is None and selected_channel_names is None:
+            selected_channels = np.arange(
+                self.metadata.num_channels, dtype=np.uint32
+            )
+
+        if selected_channel_names:
+            selected_channels = [self.metadata.channel_names.index(value) 
+                                    for value in selected_channel_names]
+            selected_channels = np.array(selected_channels, dtype=np.uint32)
+
+        samples = self.samples[
+            start_sample_index:end_sample_index, selected_channels
+        ].astype("float64")
+
+        for idx, ch in enumerate(selected_channels):
+            samples[:, idx] = samples[:, idx] * \
+                self.metadata.bit_volts[ch]
+
+        return samples
+
+    def set_start_sample(self, start_sample):
+        """
+        Updates start sample and triggers reload next time
+        samples are requested.
+
+        Parameters
+        ----------
+        start_sample : int
+            First sample number (not sample index) to be loaded.
+
+        """
+        self.sample_range[0] = start_sample
+        self.reload_required = True
+
+    def set_end_sample(self, end_sample):
+        """
+        Updates end sample and triggers reload next time
+        samples are requested.
+
+        Parameters
+        ----------
+        end_sample : int
+            Last sample number (not sample index) to be loaded.
+
+        """
+        self.sample_range[1] = end_sample
+        self.reload_required = True
+
+    def set_sample_range(self, sample_range):
+        """
+        Updates start and end sample and triggers reload next time
+        samples are requested.
+
+        Parameters
+        ----------
+        sample_range : 2-element list
+            First and last sample numbers (not sample indices) to be
+            loaded.
+
+        """
+        self.sample_range = sample_range
+        self.reload_required = True
+
+    def set_selected_channels(self, selected_channels):
+        """
+        Updates indices of selected channels and triggers reload next time
+        samples are requested.
+
+        Parameters
+        ----------
+        selected_channels : np.ndarray
+            Indices of channels to be loaded.
+
+        """
+        self.selected_channels = selected_channels
+        self.reload_required = True
+
+    def _load_samples(self):
+
+        total_samples = self.sample_range[1] - self.sample_range[0]
+        total_channels = len(self.selected_channels)
+
+        self._samples = np.zeros((total_samples, total_channels))
+
+        channel_idx = 0
+
+        for file_idx in self.selected_channels:
+
+            if os.path.splitext(self.files[file_idx])[1] == ".continuous":
+                sample_numbers, samples, _, _ = load_continuous(
+                    self.files[file_idx],
+                    self.recording_index,
+                    self.sample_range[0],
+                    self.sample_range[1],
+                )
+
+                self._samples[:, channel_idx] = samples
+                channel_idx += 1
+
+        self.sample_numbers = sample_numbers
+
+        start = np.searchsorted(self._sample_numbers_internal, self.sample_range[0])
+        end = np.searchsorted(self._sample_numbers_internal, self.sample_range[1])
+        self.timestamps = self._timestamps_internal[start:end]
+
+    def _load_timestamps(self):
+
+        data = np.memmap(self.timestamps_file, dtype="<f8", offset=0, mode="r")[
+            self.valid_records
+        ]
+        data = np.append(data, 2 * data[-1] - data[-2])
+
+        self._timestamps_internal = []
+
+        for i in range(len(data) - 1):
+            self._timestamps_internal.extend(
+                np.linspace(data[i], data[i + 1], 1024, endpoint=True)
+            )
+
+        self.timestamps = self._timestamps_internal
 
 class OpenEphysRecording(Recording):
 
-    class Spikes:
 
-        def __init__(self, info, directory, recording_index):
-
-            self.metadata = {}
-            self.metadata["name"] = info["name"]
-            self.metadata["stream_name"] = info["stream_name"]
-
-            self.sample_numbers, self.waveforms, header = load(
-                os.path.join(directory, info["filename"]), recording_index
-            )
-
-            self.waveforms = self.waveforms.astype("float64") * info["bit_volts"]
-
-            self.metadata["sample_rate"] = float(header["sampleRate"])
-            self.metadata["num_channels"] = int(info["num_channels"])
-
-    class Continuous:
-
-        def __init__(self, info, files, recording_index):
-
-            self.name = files[0].strip().split("_")[-2]
-            self.files = files
-            self.timestamps_file = info["timestamps_file"]
-            self.recording_index = recording_index
-            self._sample_numbers_internal, _, _, self.valid_records = load(
-                files[0], recording_index
-            )
-            self.global_timestamps = None
-
-            self.reload_required = False
-            self._samples = None
-            self.sample_numbers = self._sample_numbers_internal
-            self.sample_range = [self.sample_numbers[0], self.sample_numbers[-1] + 1]
-            self.selected_channels = np.arange(len(files))
-
-            self.metadata = {}
-
-            self.metadata["source_node_id"] = int(info["source_node_id"])
-            self.metadata["source_node_name"] = info["source_node_name"]
-
-            self.metadata["stream_name"] = info["stream_name"]
-
-            self.metadata["sample_rate"] = info["sample_rate"]
-            self.metadata["num_channels"] = len(files)
-
-            self.metadata["channel_names"] = info["channel_names"]
-
-            self.metadata["bit_volts"] = info["bit_volts"]
-
-            self._load_timestamps()
-
-            self.global_timestamps = None
-
-        @property
-        def samples(self):
-            if self._samples is None or self.reload_required:
-                self._load_samples()
-                self.reload_required = False
-            return self._samples
-
-        def get_samples(
-            self,
-            start_sample_index,
-            end_sample_index,
-            selected_channels=None,
-            selected_channel_names=None,
-        ):
-            """
-            Returns samples scaled to microvolts. Converts sample values
-            from 16-bit integers to 64-bit floats.
-
-            Parameters
-            ----------
-            start_sample_index : int
-                Index of the first sample to return
-            end_sample_index : int
-                Index of the last sample to return
-            selected_channels : numpy.ndarray, optional
-                Selects a subset of channels to return based on index.
-                If no channels are selected, all channels are returned.
-            selected_channel_names : List[str], optional
-                Selects a subset of channels to return based on name.
-                If no channels are selected, all channels are returned.
-
-            Returns
-            -------
-            samples : numpy.ndarray (float64)
-
-            """
-
-            if selected_channels is not None and selected_channel_names is not None:
-                raise ValueError(
-                    "Cannot specify both `selected_channels`" +
-                    " and `selected_channel_names` as input arguments"
-                )
-
-            if selected_channels is None and selected_channel_names is None:
-                selected_channels = np.arange(
-                    self.metadata["num_channels"], dtype=np.uint32
-                )
-
-            if selected_channel_names:
-                selected_channels = [self.metadata['channel_names'].index(value) 
-                                     for value in selected_channel_names]
-                selected_channels = np.array(selected_channels, dtype=np.uint32)
-
-            samples = self.samples[
-                start_sample_index:end_sample_index, selected_channels
-            ].astype("float64")
-
-            for idx, ch in enumerate(selected_channels):
-                samples[:, idx] = samples[:, idx] * \
-                    self.metadata["bit_volts"][ch]
-
-            return samples
-
-        def set_start_sample(self, start_sample):
-            """
-            Updates start sample and triggers reload next time
-            samples are requested.
-
-            Parameters
-            ----------
-            start_sample : int
-                First sample number (not sample index) to be loaded.
-
-            """
-            self.sample_range[0] = start_sample
-            self.reload_required = True
-
-        def set_end_sample(self, end_sample):
-            """
-            Updates end sample and triggers reload next time
-            samples are requested.
-
-            Parameters
-            ----------
-            end_sample : int
-                Last sample number (not sample index) to be loaded.
-
-            """
-            self.sample_range[1] = end_sample
-            self.reload_required = True
-
-        def set_sample_range(self, sample_range):
-            """
-            Updates start and end sample and triggers reload next time
-            samples are requested.
-
-            Parameters
-            ----------
-            sample_range : 2-element list
-                First and last sample numbers (not sample indices) to be
-                loaded.
-
-            """
-            self.sample_range = sample_range
-            self.reload_required = True
-
-        def set_selected_channels(self, selected_channels):
-            """
-            Updates indices of selected channels and triggers reload next time
-            samples are requested.
-
-            Parameters
-            ----------
-            selected_channels : np.ndarray
-                Indices of channels to be loaded.
-
-            """
-            self.selected_channels = selected_channels
-            self.reload_required = True
-
-        def _load_samples(self):
-
-            total_samples = self.sample_range[1] - self.sample_range[0]
-            total_channels = len(self.selected_channels)
-
-            self._samples = np.zeros((total_samples, total_channels))
-
-            channel_idx = 0
-
-            for file_idx in self.selected_channels:
-
-                if os.path.splitext(self.files[file_idx])[1] == ".continuous":
-                    sample_numbers, samples, _, _ = load_continuous(
-                        self.files[file_idx],
-                        self.recording_index,
-                        self.sample_range[0],
-                        self.sample_range[1],
-                    )
-
-                    self._samples[:, channel_idx] = samples
-                    channel_idx += 1
-
-            self.sample_numbers = sample_numbers
-
-            start = np.searchsorted(self._sample_numbers_internal, self.sample_range[0])
-            end = np.searchsorted(self._sample_numbers_internal, self.sample_range[1])
-            self.timestamps = self._timestamps_internal[start:end]
-
-        def _load_timestamps(self):
-
-            data = np.memmap(self.timestamps_file, dtype="<f8", offset=0, mode="r")[
-                self.valid_records
-            ]
-            data = np.append(data, 2 * data[-1] - data[-2])
-
-            self._timestamps_internal = []
-
-            for i in range(len(data) - 1):
-                self._timestamps_internal.extend(
-                    np.linspace(data[i], data[i + 1], 1024, endpoint=True)
-                )
-
-            self.timestamps = self._timestamps_internal
+ 
 
     def __init__(self, directory, experiment_index=0, recording_index=0):
 
