@@ -31,25 +31,35 @@ import xml.etree.ElementTree as XmlElementTree
 
 from open_ephys.analysis.formats.helpers import load, load_continuous
 
-from open_ephys.analysis.recording import ContinuousMetadata, Recording, SpikeMetadata
+from open_ephys.analysis.recording import (
+    AbstractContinuous,
+    ContinuousMetadata,
+    Recording,
+    AbstractSpikes,
+    SpikeMetadata,
+)
 
-class Spikes:
+
+class Spikes(AbstractSpikes):
 
     def __init__(self, info: dict, directory: str, recording_index: int):
 
         self.sample_numbers, self.waveforms, header = load(
             os.path.join(directory, info["filename"]), recording_index
-        ) 
+        )
+
+        assert self.waveforms is not None, "No waveforms found in this directory."
 
         self.metadata = SpikeMetadata(
             name=info["name"],
             stream_name=info["stream_name"],
             sample_rate=float(header["sampleRate"]),
             num_channels=int(info["num_channels"]),
-        ) 
+        )
         self.waveforms = self.waveforms.astype("float64") * info["bit_volts"]
 
-class Continuous:
+
+class Continuous(AbstractContinuous):
 
     def __init__(self, info: dict, files: list[str], recording_index: int):
 
@@ -120,18 +130,18 @@ class Continuous:
 
         if selected_channels is not None and selected_channel_names is not None:
             raise ValueError(
-                "Cannot specify both `selected_channels`" +
-                " and `selected_channel_names` as input arguments"
+                "Cannot specify both `selected_channels`"
+                + " and `selected_channel_names` as input arguments"
             )
 
         if selected_channels is None and selected_channel_names is None:
-            selected_channels = np.arange(
-                self.metadata.num_channels, dtype=np.uint32
-            )
+            selected_channels = np.arange(self.metadata.num_channels, dtype=np.uint32)
 
         if selected_channel_names:
-            selected_channels = [self.metadata.channel_names.index(value) 
-                                    for value in selected_channel_names]
+            selected_channels = [
+                self.metadata.channel_names.index(value)
+                for value in selected_channel_names
+            ]
             selected_channels = np.array(selected_channels, dtype=np.uint32)
 
         samples = self.samples[
@@ -139,8 +149,7 @@ class Continuous:
         ].astype("float64")
 
         for idx, ch in enumerate(selected_channels):
-            samples[:, idx] = samples[:, idx] * \
-                self.metadata.bit_volts[ch]
+            samples[:, idx] = samples[:, idx] * self.metadata.bit_volts[ch]
 
         return samples
 
@@ -245,10 +254,8 @@ class Continuous:
 
         self.timestamps = self._timestamps_internal
 
+
 class OpenEphysRecording(Recording):
-
-
- 
 
     def __init__(self, directory, experiment_index=0, recording_index=0):
 

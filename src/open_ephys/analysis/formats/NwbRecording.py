@@ -25,18 +25,25 @@ SOFTWARE.
 import glob
 import os
 import h5py as h5
-
 import numpy as np
 import pandas as pd
 
-from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata, Recording
+from open_ephys.analysis.recording import (
+    AbstractContinuous,
+    ContinuousMetadata,
+    AbstractSpikes,
+    SpikeMetadata,
+    Recording,
+)
 
-class Spikes:
-    def __init__(self, nwb, dataset):
+
+class Spikes(AbstractSpikes):
+    def __init__(self, nwb: h5.File, dataset: str):
         self.metadata = SpikeMetadata(
             name=dataset.split(".")[-1],
             stream_name=dataset.split(".")[-2],
             num_channels=nwb["acquisition"][dataset]["data"][()].shape[1],
+            sample_rate=None,
         )
 
         self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
@@ -45,7 +52,8 @@ class Spikes:
 
         self.waveforms *= nwb["acquisition"][dataset]["channel_conversion"][0] * 1e6
 
-class Continuous:
+
+class Continuous(AbstractContinuous):
     def __init__(self, nwb, dataset: str):
 
         source_node = dataset.split(".")[0]
@@ -105,18 +113,18 @@ class Continuous:
 
         if selected_channels is not None and selected_channel_names is not None:
             raise ValueError(
-                "Cannot specify both `selected_channels`" +
-                " and `selected_channel_names` as input arguments"
+                "Cannot specify both `selected_channels`"
+                + " and `selected_channel_names` as input arguments"
             )
 
         if selected_channels is None and selected_channel_names is None:
-            selected_channels = np.arange(
-                self.metadata.num_channels, dtype=np.uint32
-            )
+            selected_channels = np.arange(self.metadata.num_channels, dtype=np.uint32)
 
         if selected_channel_names:
-            selected_channels = [self.metadata.channel_names.index(value) 
-                                    for value in selected_channel_names]
+            selected_channels = [
+                self.metadata.channel_names.index(value)
+                for value in selected_channel_names
+            ]
             selected_channels = np.array(selected_channels, dtype=np.uint32)
 
         samples = self.samples[
@@ -124,11 +132,10 @@ class Continuous:
         ].astype("float64")
 
         for idx, ch in enumerate(selected_channels):
-            samples[:, idx] = samples[:, idx] * \
-                self.metadata.bit_volts[ch]
+            samples[:, idx] = samples[:, idx] * self.metadata.bit_volts[ch]
 
         return samples
-    
+
 
 class NwbRecording(Recording):
 

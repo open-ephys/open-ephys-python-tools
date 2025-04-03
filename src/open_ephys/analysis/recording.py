@@ -24,8 +24,12 @@ SOFTWARE.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+import typing
 import warnings
+import numpy as np
+
+if typing.TYPE_CHECKING:
+    import pandas
 
 
 @dataclass
@@ -46,6 +50,38 @@ class ContinuousMetadata:
     channel_names: list[str] | None
     bit_volts: list[float]
     # channel_map: Any | None = None
+
+
+class AbstractContinuous(ABC):
+    metadata: ContinuousMetadata
+
+    @abstractmethod
+    def get_samples(
+        self,
+        start_sample_index: int,
+        end_sample_index: int,
+        selected_channels: np.ndarray | None = None,
+        selected_channel_names: list[str] | None = None,
+    ):
+        pass
+
+
+class AbstractSpikes(ABC):
+    metadata: SpikeMetadata
+    waveforms: np.ndarray | None
+    samples: np.ndarray | None
+    timestamps: np.ndarray | None
+    sample_numbers: np.ndarray | None
+
+    @abstractmethod
+    def get_waveforms(
+        self,
+        start_sample_index: int,
+        end_sample_index: int,
+        selected_channels: np.ndarray | None = None,
+        selected_channel_names: list[str] | None = None,
+    ):
+        pass
 
 
 class Recording(ABC):
@@ -98,31 +134,50 @@ class Recording(ABC):
     """
 
     @property
-    def continuous(self):
+    def continuous(self) -> list[AbstractContinuous] | None:
+        """Returns a list of Continuous objects"""
         if self._continuous is None:
             self.load_continuous()
         return self._continuous
 
     @property
-    def events(self):
+    def events(self) -> "pandas.DataFrame" | None:
+        """Returns a pandas DataFrame containing events"""
         if self._events is None:
             self.load_events()
         return self._events
 
     @property
-    def spikes(self):
+    def spikes(self) -> list[AbstractSpikes] | None:
+        """spikes is a list of spike sources
+        - waveforms (spikes x channels x samples)
+        - sample_numbers (one per sample)
+        - timestamps (one per sample)
+        - electrodes (index of electrode from which each spike originated)
+        - metadata (contains information about each electrode, see `SpikeMetadata`)
+            - electrode_names
+            - bit_volts
+            - source_node_id
+            - stream_name
+        """
         if self._spikes is None:
             self.load_spikes()
         return self._spikes
 
     @property
-    def messages(self):
+    def messages(self) -> "pandas.DataFrame" | None:
+        """messages is a pandas DataFrame containing three columns:
+        - timestamp
+        - sample_number
+        - message
+
+        """
         if self._messages is None:
             self.load_messages()
         return self._messages
 
     @property
-    def format(self):
+    def format(self) -> str | None:
         return self._format
 
     def __init__(
@@ -160,6 +215,7 @@ class Recording(ABC):
         self._events = None
         self._spikes = None
         self._messages = None
+        self._format = None
 
         self.sync_lines = []
 

@@ -29,11 +29,17 @@ import numpy as np
 import pandas as pd
 import json
 
-from open_ephys.analysis.recording import Recording, ContinuousMetadata, SpikeMetadata
+from open_ephys.analysis.recording import (
+    AbstractContinuous,
+    Recording,
+    ContinuousMetadata,
+    AbstractSpikes,
+    SpikeMetadata,
+)
 from open_ephys.analysis.utils import alphanum_key
 
 
-class Continuous:
+class Continuous(AbstractContinuous):
     name: str
     metadata: ContinuousMetadata
     mmap_mode = str | None
@@ -150,7 +156,7 @@ class Continuous:
         return samples
 
 
-class Spikes:
+class Spikes(AbstractSpikes):
     name: str
     metadata: SpikeMetadata
     sample_numbers: np.ndarray
