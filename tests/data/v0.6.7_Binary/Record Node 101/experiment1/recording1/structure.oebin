@@ -1,0 +1,180 @@
+{
+    "GUI version": "0.6.7",
+    "continuous": [
+      {
+        "folder_name": "File_Reader-100.example_data/",
+        "sample_rate": 40000.0,
+        "source_processor_name": "File Reader",
+        "source_processor_id": 100,
+        "stream_name": "example_data",
+        "recorded_processor": "Record Node",
+        "recorded_processor_id": 101,
+        "num_channels": 16,
+        "channels": [
+          {
+            "channel_name": "CH1",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH2",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH3",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH4",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH5",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH6",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH7",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH8",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH9",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH10",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH11",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH12",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH13",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH14",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH15",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH16",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "folder_name": "File_Reader-100.example_data/TTL/",
+        "channel_name": "All TTL events",
+        "description": "All TTL events loaded for the current input data source",
+        "identifier": "sourceevent",
+        "sample_rate": 40000.0,
+        "type": "int16",
+        "source_processor": "File Reader",
+        "stream_name": "example_data",
+        "initial_state": 0
+      },
+      {
+        "folder_name": "Network_Events-108.example_data/TTL/",
+        "channel_name": "Network Events output",
+        "description": "Triggers whenever \"TTL\" is received on the port.",
+        "identifier": "external.network.ttl",
+        "sample_rate": 40000.0,
+        "type": "int16",
+        "source_processor": "Network Events",
+        "stream_name": "example_data",
+        "initial_state": 0
+      },
+      {
+        "folder_name": "MessageCenter/",
+        "channel_name": "Messages",
+        "description": "Broadcasts messages from the MessageCenter",
+        "identifier": "messagecenter.events",
+        "sample_rate": 40000.0,
+        "type": "string",
+        "source_processor": "Message Center",
+        "stream_name": "example_data"
+      }
+    ],
+    "spikes": []
+  }
