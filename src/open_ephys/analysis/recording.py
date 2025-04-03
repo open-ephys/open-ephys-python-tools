@@ -48,7 +48,6 @@ class ContinuousMetadata:
     # channel_map: Any | None = None
 
 
-
 class Recording(ABC):
     """Abstract class representing data from a single Recording
 

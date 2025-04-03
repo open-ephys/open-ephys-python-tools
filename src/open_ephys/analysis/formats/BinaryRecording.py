@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from dataclasses import dataclass
 import glob
 import os
 import numpy as np
@@ -35,6 +34,12 @@ from open_ephys.analysis.utils import alphanum_key
 
 
 class Continuous:
+    name: str
+    metadata: ContinuousMetadata
+    mmap_mode = str | None
+    samples: np.ndarray
+    global_timestamps: np.ndarray | None
+
     def __init__(
         self, info: dict, base_directory: str, version: float, mmap_timestamps=True
     ):
@@ -50,9 +55,11 @@ class Continuous:
         self.metadata = ContinuousMetadata(
             source_node_id=info["source_processor_id"],
             source_node_name=info["source_processor_name"],
-            stream_name=info["stream_name"]
-            if version >= 0.6
-            else str(info["source_processor_sub_dx"]),
+            stream_name=(
+                info["stream_name"]
+                if version >= 0.6
+                else str(info["source_processor_sub_dx"])
+            ),
             sample_rate=info["sample_rate"],
             num_channels=info["num_channels"],
             channel_names=[ch["channel_name"] for ch in info["channels"]],
@@ -144,6 +151,14 @@ class Continuous:
 
 
 class Spikes:
+    name: str
+    metadata: SpikeMetadata
+    sample_numbers: np.ndarray
+    timestamps: np.ndarray
+    electrodes: np.ndarray
+    clusters: np.ndarray
+    waveforms: np.ndarray
+
     def __init__(self, info: dict, base_directory: str, version: float):
         self.metadata = SpikeMetadata(
             name=info["name"],
