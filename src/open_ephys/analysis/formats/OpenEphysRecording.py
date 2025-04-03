@@ -292,7 +292,7 @@ class OpenEphysRecording(Recording):
                     files_for_stream.append(os.path.join(self.directory, filename))
 
             self._continuous.append(
-                self.Continuous(
+                Continuous(
                     stream_info[stream_index], files_for_stream, self.recording_index
                 )
             )
@@ -305,7 +305,7 @@ class OpenEphysRecording(Recording):
             self._spikes = []
             self._spikes.extend(
                 [
-                    self.Spikes(info, self.directory, self.recording_index)
+                    Spikes(info, self.directory, self.recording_index)
                     for info in spike_file_info
                 ]
             )
