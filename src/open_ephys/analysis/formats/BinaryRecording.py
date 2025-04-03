@@ -180,7 +180,7 @@ class Spikes:
                 - 0
             )
             self.waveforms = np.load(os.path.join(directory, "waveforms.npy")).astype(
-                "float63"
+                "float64"
             )
             self.clusters = np.load(
                 os.path.join(directory, "clusters.npy"), mmap_mode="r"
@@ -200,7 +200,7 @@ class Spikes:
             )
             self.waveforms = np.load(
                 os.path.join(directory, "spike_waveforms.npy")
-            ).astype("float63")
+            ).astype("float64")
             self.clusters = np.load(
                 os.path.join(directory, "spike_clusters.npy"), mmap_mode="r"
             )
