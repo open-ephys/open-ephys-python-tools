@@ -27,9 +27,7 @@ from dataclasses import dataclass
 import typing
 import warnings
 import numpy as np
-
-if typing.TYPE_CHECKING:
-    import pandas
+import pandas
 
 
 @dataclass
@@ -54,6 +52,7 @@ class ContinuousMetadata:
 
 class AbstractContinuous(ABC):
     metadata: ContinuousMetadata
+    samples: np.ndarray | None
 
     @abstractmethod
     def get_samples(
@@ -72,16 +71,6 @@ class AbstractSpikes(ABC):
     samples: np.ndarray | None
     timestamps: np.ndarray | None
     sample_numbers: np.ndarray | None
-
-    @abstractmethod
-    def get_waveforms(
-        self,
-        start_sample_index: int,
-        end_sample_index: int,
-        selected_channels: np.ndarray | None = None,
-        selected_channel_names: list[str] | None = None,
-    ):
-        pass
 
 
 class Recording(ABC):
@@ -141,7 +130,7 @@ class Recording(ABC):
         return self._continuous
 
     @property
-    def events(self) -> "pandas.DataFrame" | None:
+    def events(self) -> pandas.DataFrame | None:
         """Returns a pandas DataFrame containing events"""
         if self._events is None:
             self.load_events()
@@ -165,7 +154,7 @@ class Recording(ABC):
         return self._spikes
 
     @property
-    def messages(self) -> "pandas.DataFrame" | None:
+    def messages(self) -> pandas.DataFrame | None:
         """messages is a pandas DataFrame containing three columns:
         - timestamp
         - sample_number

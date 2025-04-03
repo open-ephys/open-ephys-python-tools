@@ -43,7 +43,7 @@ class Spikes(AbstractSpikes):
             name=dataset.split(".")[-1],
             stream_name=dataset.split(".")[-2],
             num_channels=nwb["acquisition"][dataset]["data"][()].shape[1],
-            sample_rate=None,
+            sample_rate=None,  # FIXME:
         )
 
         self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
