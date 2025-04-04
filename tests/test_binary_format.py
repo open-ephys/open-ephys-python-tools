@@ -6,8 +6,10 @@ import pytest
 import os
 import open_ephys.analysis as oe
 from open_ephys.analysis.formats import BinaryRecording
-from open_ephys.analysis.formats.BinaryRecording import Continuous, Spikes
+from open_ephys.analysis.formats.BinaryRecording import Continuous, Spikes, OEBIN_SCHEMA
 from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata
+import json
+import jsonschema
 
 PLUGIN_GUI_VERSION = "v0.6.7"
 
@@ -57,6 +59,18 @@ def recording_with_continuous_data(binary_session: oe.Session):
 def binary_recording_with_spike_data(binary_session: oe.Session):
     # Assuming the second record node has spike data for testing
     return binary_session.recordnodes[1].recordings[0]
+
+
+def test_validate_oebin(binary_file_path):
+    oebin_file = os.path.join(
+        binary_file_path,
+        "Record Node 101",
+        "experiment1",
+        "recording1",
+        "structure.oebin",
+    )
+    oebin_json = json.load(open(oebin_file, "r"))
+    jsonschema.validate(instance=oebin_json, schema=OEBIN_SCHEMA)
 
 
 def test_open_session(binary_file_path: str):

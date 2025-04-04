@@ -27,6 +27,7 @@ version = { attr = "open_ephys.__version__" }
 [dependency-groups]
 dev = [
     "black>=25.1.0",
+    "jsonschema>=4.23.0",
     "mypy>=1.15.0",
     "pytest>=8.3.5",
 ]
