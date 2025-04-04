@@ -25,6 +25,7 @@ SOFTWARE.
 
 import glob
 import os
+import pprint
 import numpy as np
 import pandas as pd
 import json
@@ -102,6 +103,14 @@ class Continuous(AbstractContinuous):
                 self.sample_numbers = np.arange(self.samples.shape[0])
 
         self.global_timestamps = None
+
+    def __str__(self):
+        metadata_str = pprint.pformat(self.metadata)
+        return (
+            f"Continuous Data: {self.name} (format='binary', mmap_mode={self.mmap_mode})\n"
+            f"├─── Samples: {self.samples.shape[0]} samples x {self.samples.shape[1]} channels\n"
+            f"└─── {metadata_str}\n"
+        )
 
     def get_samples(
         self,
@@ -218,6 +227,17 @@ class Spikes(AbstractSpikes):
             self.waveforms = np.expand_dims(self.waveforms, 0)
 
         self.waveforms *= float(info["source_channels"][-1]["bit_volts"])
+
+    def __str__(self):
+        metadata_str = pprint.pformat(self.metadata)
+        return (
+            f"Spike Data: {self.name} (format='binary')\n"
+            f"├─── sample_numbers: {self.sample_numbers.shape} spikes\n"
+            f"├─── timestamps: {self.timestamps.shape} spikes\n"
+            f"├─── electrodes: {self.electrodes.shape} spikes\n"
+            f"├─── clusters: {self.clusters.shape} spikes\n"
+            f"└─── {metadata_str}\n"
+        )
 
 
 class BinaryRecording(Recording):
