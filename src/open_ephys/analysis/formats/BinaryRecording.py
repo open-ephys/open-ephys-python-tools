@@ -231,11 +231,12 @@ class Spikes(AbstractSpikes):
     def __str__(self):
         metadata_str = pprint.pformat(self.metadata)
         return (
-            f"Spike Data: {self.name} (format='binary')\n"
-            f"├─── sample_numbers: {self.sample_numbers.shape} spikes\n"
-            f"├─── timestamps: {self.timestamps.shape} spikes\n"
-            f"├─── electrodes: {self.electrodes.shape} spikes\n"
-            f"├─── clusters: {self.clusters.shape} spikes\n"
+            f"Spike Data: {self.metadata.name} (format='binary')\n"
+            f"├─── sample_numbers: {self.sample_numbers.shape}\n"
+            f"├─── timestamps: {self.timestamps.shape}\n"
+            f"├─── electrodes: {self.electrodes.shape}\n"
+            f"├─── clusters: {self.clusters.shape}\n"
+            f"├─── waveforms: {self.waveforms.shape}\n"
             f"└─── {metadata_str}\n"
         )
 
