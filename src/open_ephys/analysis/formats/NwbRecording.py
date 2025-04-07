@@ -159,7 +159,7 @@ class NwbRecording(Recording):
         datasets = list(self.nwb["acquisition"].keys())
 
         self._continuous = [
-            self.Continuous(self.nwb, dataset)
+            NwbContinuous(self.nwb, dataset)
             for dataset in datasets
             if self.nwb["acquisition"][dataset].attrs["neurodata_type"]
             == "ElectricalSeries"
@@ -170,7 +170,7 @@ class NwbRecording(Recording):
         datasets = list(self.nwb["acquisition"].keys())
 
         self._spikes = [
-            self.Spikes(self.nwb, dataset)
+            NwbSpikes(self.nwb, dataset)
             for dataset in datasets
             if self.nwb["acquisition"][dataset].attrs["neurodata_type"]
             == "SpikeEventSeries"
@@ -219,7 +219,9 @@ class NwbRecording(Recording):
         )
 
     def load_messages(self):
-        pass
+        raise NotImplementedError(
+            "Loading messages from NWB2 format is noy yet implemented."
+        )
 
     def __str__(self):
         """Returns a string with information about the Recording"""

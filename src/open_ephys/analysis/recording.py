@@ -35,7 +35,7 @@ import pandas
 class SpikeMetadata:
     name: str
     stream_name: str
-    sample_rate: float
+    sample_rate: float | None
     num_channels: int
 
 
