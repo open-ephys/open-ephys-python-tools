@@ -4,7 +4,7 @@
 
 - The metadata of `Continuous` and `Spike` in the analysis package now are typed dataclasses
   instead of `dict` objects. This makes accessing metadata more reliable.
-- Basic tests for reading datasets has been added.
+- Automated tests for reading Binary, NWB and OpenEphys data formats have been added.
 
 ## 0.1.4
 
