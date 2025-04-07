@@ -32,15 +32,15 @@ import xml.etree.ElementTree as XmlElementTree
 from open_ephys.analysis.formats.helpers import load, load_continuous
 
 from open_ephys.analysis.recording import (
-    AbstractContinuous,
+    Continuous,
     ContinuousMetadata,
     Recording,
-    AbstractSpikes,
+    Spikes,
     SpikeMetadata,
 )
 
 
-class Spikes(AbstractSpikes):
+class OpenEphysSpikes(Spikes):
 
     def __init__(self, info: dict, directory: str, recording_index: int):
 
@@ -59,7 +59,7 @@ class Spikes(AbstractSpikes):
         self.waveforms = self.waveforms.astype("float64") * info["bit_volts"]
 
 
-class Continuous(AbstractContinuous):
+class OpenEphysContinuous(Continuous):
 
     def __init__(self, info: dict, files: list[str], recording_index: int):
 
@@ -292,7 +292,7 @@ class OpenEphysRecording(Recording):
                     files_for_stream.append(os.path.join(self.directory, filename))
 
             self._continuous.append(
-                Continuous(
+                OpenEphysContinuous(
                     stream_info[stream_index], files_for_stream, self.recording_index
                 )
             )
@@ -305,7 +305,7 @@ class OpenEphysRecording(Recording):
             self._spikes = []
             self._spikes.extend(
                 [
-                    Spikes(info, self.directory, self.recording_index)
+                    OpenEphysSpikes(info, self.directory, self.recording_index)
                     for info in spike_file_info
                 ]
             )

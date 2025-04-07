@@ -31,10 +31,10 @@ import pandas as pd
 import json
 
 from open_ephys.analysis.recording import (
-    AbstractContinuous,
+    Continuous,
     Recording,
     ContinuousMetadata,
-    AbstractSpikes,
+    Spikes,
     SpikeMetadata,
 )
 from open_ephys.analysis.utils import alphanum_key
@@ -43,7 +43,7 @@ oebin_schema_file = os.path.join(os.path.dirname(__file__), "oebin_schema.json")
 OEBIN_SCHEMA = json.load(open(oebin_schema_file, "r"))
 
 
-class Continuous(AbstractContinuous):
+class BinaryContinuous(Continuous):
     name: str
     metadata: ContinuousMetadata
     mmap_mode = str | None
@@ -168,7 +168,7 @@ class Continuous(AbstractContinuous):
         return samples
 
 
-class Spikes(AbstractSpikes):
+class BinarySpikes(Spikes):
     name: str
     metadata: SpikeMetadata
     sample_numbers: np.ndarray
@@ -242,6 +242,7 @@ class Spikes(AbstractSpikes):
 
 
 class BinaryRecording(Recording):
+
     def __init__(
         self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True
     ):
@@ -250,17 +251,18 @@ class BinaryRecording(Recording):
         )
 
         with open(os.path.join(self.directory, "structure.oebin"), "r") as oebin_file:
-            self.info = json.load(oebin_file)
+            self.info: dict = json.load(oebin_file)
+
         self._format = "binary"
         self._version = float(".".join(self.info["GUI version"].split(".")[:2]))
         self.sort_events = True
 
     def load_continuous(self):
-        self._continuous: list[Continuous] = []
+        self._continuous: list[BinaryContinuous] = []
 
         for info in self.info["continuous"]:
             try:
-                c = Continuous(
+                c = BinaryContinuous(
                     info, self.directory, self._version, self.mmap_timestamps
                 )
             except FileNotFoundError as e:
@@ -278,7 +280,7 @@ class BinaryRecording(Recording):
 
         self._spikes.extend(
             [
-                Spikes(info, self.directory, self._version)
+                BinarySpikes(info, self.directory, self._version)
                 for info in self.info["spikes"]
             ]
         )

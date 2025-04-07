@@ -6,7 +6,11 @@ import pytest
 import os
 import open_ephys.analysis as oe
 from open_ephys.analysis.formats import BinaryRecording
-from open_ephys.analysis.formats.BinaryRecording import Continuous, Spikes, OEBIN_SCHEMA
+from open_ephys.analysis.formats.BinaryRecording import (
+    BinaryContinuous,
+    BinarySpikes,
+    OEBIN_SCHEMA,
+)
 from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata
 import json
 import jsonschema
@@ -90,7 +94,7 @@ def test_continuous_data(
 
     assert len(recording_with_continuous_data.continuous) > 0
 
-    cont: Continuous = recording_with_continuous_data.continuous[0]
+    cont = recording_with_continuous_data.continuous[0]
     assert cont.name == "File_Reader-100.example_data/"
     assert cont.samples.shape == (131362, 16)
     assert cont.metadata == binary_recording_correct_continuous_metadata
@@ -107,7 +111,7 @@ def test_spike_data(
 
     assert len(binary_recording_with_spike_data.spikes) > 0
 
-    spike: Spikes = binary_recording_with_spike_data.spikes[0]
+    spike: BinarySpikes = binary_recording_with_spike_data.spikes[0]
     assert spike.waveforms.shape == (nSpikes, nChannels, nSamplesPerWaveForm)
     assert spike.clusters.shape == (nSpikes,)
     assert spike.metadata == binary_recording_correct_spike_metadata

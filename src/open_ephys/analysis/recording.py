@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Open Ephys
+Copyright (c) 2025 Joscha Schmiedt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -50,9 +51,9 @@ class ContinuousMetadata:
     # channel_map: Any | None = None
 
 
-class AbstractContinuous(ABC):
+class Continuous(ABC):
     metadata: ContinuousMetadata
-    samples: np.ndarray | None
+    samples: np.ndarray
 
     @abstractmethod
     def get_samples(
@@ -65,7 +66,7 @@ class AbstractContinuous(ABC):
         pass
 
 
-class AbstractSpikes(ABC):
+class Spikes(ABC):
     metadata: SpikeMetadata
     waveforms: np.ndarray | None
     samples: np.ndarray | None
@@ -123,7 +124,7 @@ class Recording(ABC):
     """
 
     @property
-    def continuous(self) -> list[AbstractContinuous] | None:
+    def continuous(self) -> list[Continuous] | None:
         """Returns a list of Continuous objects"""
         if self._continuous is None:
             self.load_continuous()
@@ -137,7 +138,7 @@ class Recording(ABC):
         return self._events
 
     @property
-    def spikes(self) -> list[AbstractSpikes] | None:
+    def spikes(self) -> list[Spikes] | None:
         """spikes is a list of spike sources
         - waveforms (spikes x channels x samples)
         - sample_numbers (one per sample)

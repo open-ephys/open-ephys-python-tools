@@ -2,7 +2,10 @@ import os
 import pandas
 import pytest
 from open_ephys.analysis.formats import OpenEphysRecording
-from open_ephys.analysis.formats.OpenEphysRecording import Continuous, Spikes
+from open_ephys.analysis.formats.OpenEphysRecording import (
+    OpenEphysContinuous,
+    OpenEphysSpikes,
+)
 from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata
 
 # filepath: c:\Code\open-ephys\open-ephys-python-tools\tests\test_openephys_format.py
@@ -71,7 +74,7 @@ def test_continuous_data(
     recording_with_continuous_data: OpenEphysRecording,
     openephys_recording_correct_continuous_metadata: ContinuousMetadata,
 ):
-    cont: Continuous = recording_with_continuous_data.continuous[0]
+    cont: OpenEphysContinuous = recording_with_continuous_data.continuous[0]
     assert cont.name == "example-data"
     nChannels = 16
     nSamples = 133120
@@ -94,7 +97,7 @@ def test_spike_data(
 
     assert len(openephys_recording_with_spike_data.spikes) > 0
 
-    spike: Spikes = openephys_recording_with_spike_data.spikes[0]
+    spike: OpenEphysSpikes = openephys_recording_with_spike_data.spikes[0]
     assert spike.waveforms.shape == (nSpikes, nChannels, nSamplesPerWaveForm)
     assert spike.clusters.shape == (nSpikes,)
     assert spike.metadata == openephys_recording_correct_spike_metadata

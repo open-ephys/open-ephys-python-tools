@@ -29,15 +29,15 @@ import numpy as np
 import pandas as pd
 
 from open_ephys.analysis.recording import (
-    AbstractContinuous,
+    Continuous,
     ContinuousMetadata,
-    AbstractSpikes,
+    Spikes,
     SpikeMetadata,
     Recording,
 )
 
 
-class Spikes(AbstractSpikes):
+class NwbSpikes(Spikes):
     def __init__(self, nwb: h5.File, dataset: str):
         self.metadata = SpikeMetadata(
             name=dataset.split(".")[-1],
@@ -53,7 +53,7 @@ class Spikes(AbstractSpikes):
         self.waveforms *= nwb["acquisition"][dataset]["channel_conversion"][0] * 1e6
 
 
-class Continuous(AbstractContinuous):
+class NwbContinuous(Continuous):
     def __init__(self, nwb, dataset: str):
 
         source_node = dataset.split(".")[0]
