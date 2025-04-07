@@ -35,6 +35,7 @@ from open_ephys.analysis.recording import (
     Continuous,
     ContinuousMetadata,
     Recording,
+    RecordingFormat,
     Spikes,
     SpikeMetadata,
 )
@@ -275,7 +276,7 @@ class OpenEphysRecording(Recording):
                 directory, "Continuous_Data" + self.experiment_id + ".openephys"
             )
 
-        self._format = "open-ephys"
+        self._format = RecordingFormat.openephys
 
     def load_continuous(self):
 

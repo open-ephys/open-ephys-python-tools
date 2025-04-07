@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
 Copyright (c) 2025 Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -34,6 +34,7 @@ from open_ephys.analysis.recording import (
     Continuous,
     Recording,
     ContinuousMetadata,
+    RecordingFormat,
     Spikes,
     SpikeMetadata,
 )
@@ -253,7 +254,7 @@ class BinaryRecording(Recording):
         with open(os.path.join(self.directory, "structure.oebin"), "r") as oebin_file:
             self.info: dict = json.load(oebin_file)
 
-        self._format = "binary"
+        self._format = RecordingFormat.binary
         self._version = float(".".join(self.info["GUI version"].split(".")[:2]))
         self.sort_events = True
 

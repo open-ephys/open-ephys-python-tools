@@ -1,7 +1,8 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
+Copyright (c) Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +25,7 @@ SOFTWARE.
 
 import glob
 import os
+from pathlib import Path
 import h5py as h5
 import numpy as np
 import pandas as pd
@@ -33,6 +35,7 @@ from open_ephys.analysis.recording import (
     ContinuousMetadata,
     Spikes,
     SpikeMetadata,
+    RecordingFormat,
     Recording,
 )
 
@@ -54,7 +57,7 @@ class NwbSpikes(Spikes):
 
 
 class NwbContinuous(Continuous):
-    def __init__(self, nwb, dataset: str):
+    def __init__(self, nwb: h5.File, dataset: str):
 
         source_node = dataset.split(".")[0]
         stream_name = dataset.split(".")[1]
@@ -69,8 +72,7 @@ class NwbContinuous(Continuous):
                 1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
             ),
             num_channels=nwb["acquisition"][dataset]["data"].shape[1],
-            # FIXME: create_channel_map does not exist
-            # channel_map=self.create_channel_map(info),
+            # TODO: implement channel names
             channel_names=None,
             bit_volts=list(nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6),
         )
@@ -139,10 +141,10 @@ class NwbContinuous(Continuous):
 
 class NwbRecording(Recording):
 
-    def __init__(self, directory, experiment_index=0, recording_index=0):
+    def __init__(self, directory: str, experiment_index=0, recording_index=0):
 
         Recording.__init__(self, directory, experiment_index, recording_index)
-        self._format = "nwb"
+        self._format = RecordingFormat.nwb
         self.nwb = h5.File(
             os.path.join(
                 self.directory, "experiment" + str(self.experiment_index + 1) + ".nwb"

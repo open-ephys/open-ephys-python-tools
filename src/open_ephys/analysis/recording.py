@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
 Copyright (c) 2025 Joscha Schmiedt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,7 +25,7 @@ SOFTWARE.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import typing
+from enum import Enum
 import warnings
 import numpy as np
 import pandas
@@ -48,7 +48,6 @@ class ContinuousMetadata:
     num_channels: int
     channel_names: list[str] | None
     bit_volts: list[float]
-    # channel_map: Any | None = None
 
 
 class Continuous(ABC):
@@ -72,6 +71,12 @@ class Spikes(ABC):
     samples: np.ndarray | None
     timestamps: np.ndarray | None
     sample_numbers: np.ndarray | None
+
+
+class RecordingFormat(Enum):
+    nwb = "nwb"
+    binary = "binary"
+    openephys = "open-ephys"
 
 
 class Recording(ABC):
@@ -167,7 +172,7 @@ class Recording(ABC):
         return self._messages
 
     @property
-    def format(self) -> str | None:
+    def format(self) -> RecordingFormat | None:
         return self._format
 
     def __init__(
@@ -205,7 +210,7 @@ class Recording(ABC):
         self._events = None
         self._spikes = None
         self._messages = None
-        self._format = None
+        self._format: RecordingFormat | None = None
 
         self.sync_lines = []
 
