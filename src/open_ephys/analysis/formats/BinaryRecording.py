@@ -416,7 +416,7 @@ class BinaryRecording(Recording):
     #####################################################################
 
     @staticmethod
-    def detect_format(directory):
+    def detect_format(directory: str) -> bool:
         binary_files = glob.glob(os.path.join(directory, "experiment*", "recording*"))
 
         if len(binary_files) > 0:

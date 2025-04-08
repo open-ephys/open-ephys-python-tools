@@ -6,7 +6,11 @@ from open_ephys.analysis.formats.OpenEphysRecording import (
     OpenEphysContinuous,
     OpenEphysSpikes,
 )
-from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata
+from open_ephys.analysis.recording import (
+    ContinuousMetadata,
+    RecordingFormat,
+    SpikeMetadata,
+)
 
 # filepath: c:\Code\open-ephys\open-ephys-python-tools\tests\test_openephys_format.py
 import open_ephys.analysis as oe
@@ -67,7 +71,9 @@ def test_open_session(openephys_file_path: str):
     assert session.recordnodes is not None
     assert len(session.recordnodes) > 0
     assert all(isinstance(node, oe.RecordNode) for node in session.recordnodes)
-    assert all([node.format == "open-ephys" for node in session.recordnodes])
+    assert all(
+        [node.format == RecordingFormat.openephys for node in session.recordnodes]
+    )
 
 
 def test_continuous_data(

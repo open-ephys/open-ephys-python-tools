@@ -23,15 +23,19 @@ SOFTWARE.
 """
 
 import os
-
+from enum import Enum
 from open_ephys.analysis.formats import (
     OpenEphysRecording,
     BinaryRecording,
     NwbRecording,
 )
+from open_ephys.analysis.recording import RecordingFormat, Recording
 
 
 class RecordNode:
+    recordings: list[Recording]
+    directory: str
+
     """A 'RecordNode' object represents a directory containing data from
     one Open Ephys Record Node.
 
@@ -46,7 +50,7 @@ class RecordNode:
 
     """
 
-    def __init__(self, directory, mmap_timestamps=True):
+    def __init__(self, directory: str, mmap_timestamps: bool = True):
         """Construct a RecordNode object, which provides access to
         data from one Open Ephys Record Node
 
@@ -72,14 +76,14 @@ class RecordNode:
         initialization.
         """
 
-        self.formats = {
-            "nwb": NwbRecording,
-            "binary": BinaryRecording,
-            "open-ephys": OpenEphysRecording,
+        self.format_class_map = {
+            RecordingFormat.nwb: NwbRecording,
+            RecordingFormat.binary: BinaryRecording,
+            RecordingFormat.openephys: OpenEphysRecording,
         }
 
-        for format_key in self.formats.keys():
-            if self.formats[format_key].detect_format(self.directory):
+        for format_key in self.format_class_map.keys():
+            if self.format_class_map[format_key].detect_format(self.directory):
                 self.format = format_key
                 return
 
@@ -90,7 +94,7 @@ class RecordNode:
         Internal method used to detect Recordings upon initialization
         """
 
-        self.recordings = self.formats[self.format].detect_recordings(
+        self.recordings = self.format_class_map[self.format].detect_recordings(
             self.directory, mmap_timestamps
         )
 

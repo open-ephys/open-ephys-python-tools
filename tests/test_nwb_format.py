@@ -7,7 +7,11 @@ from open_ephys.analysis.formats.NwbRecording import (
     NwbSpikes,
     NwbContinuous,
 )
-from open_ephys.analysis.recording import ContinuousMetadata, SpikeMetadata
+from open_ephys.analysis.recording import (
+    ContinuousMetadata,
+    RecordingFormat,
+    SpikeMetadata,
+)
 
 PLUGIN_GUI_VERSION = "v0.6.7"
 
@@ -62,7 +66,7 @@ def test_open_session(nwb_session: Session, nwb_file_path):
     assert session.recordnodes is not None
     assert len(session.recordnodes) > 0
     assert all(isinstance(node, RecordNode) for node in session.recordnodes)
-    assert all([node.format == "nwb" for node in session.recordnodes])
+    assert all([node.format == RecordingFormat.nwb for node in session.recordnodes])
 
 
 def test_continuous_data(

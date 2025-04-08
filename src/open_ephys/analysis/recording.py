@@ -252,8 +252,9 @@ class Recording(ABC):
     def load_messages(self):
         pass
 
+    @staticmethod
     @abstractmethod
-    def detect_format(directory):
+    def detect_format(directory) -> bool:
         """Return True if the format matches the Record Node directory contents"""
         pass
 
