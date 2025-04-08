@@ -61,7 +61,29 @@ class Continuous(ABC):
         end_sample_index: int,
         selected_channels: np.ndarray | None = None,
         selected_channel_names: list[str] | None = None,
-    ):
+    ) -> np.ndarray:
+        """
+        Returns samples scaled to microvolts. Converts sample values
+        from 16-bit integers to 64-bit floats.
+
+        Parameters
+        ----------
+        start_sample_index : int
+            Index of the first sample to return
+        end_sample_index : int
+            Index of the last sample to return
+        selected_channels : numpy.ndarray, optional
+            Selects a subset of channels to return based on index.
+            If no channels are selected, all channels are returned.
+        selected_channel_names : List[str], optional
+            Selects a subset of channels to return based on name.
+            If no channels are selected, all channels are returned.
+
+        Returns
+        -------
+        samples : numpy.ndarray (float64)
+
+        """
         pass
 
 
