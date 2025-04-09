@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Dropped support for Python < 3.9
 - Refactoring without new functionality or API changes
   - The `Continuous` and `Spike` classes of the three formats now have an explicit interface
     (i.e. abstract parent class) and have been renamed to `BinaryContinuous`, `BinarySpike` etc.
