@@ -1,7 +1,8 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
+Copyright (c) 2025 Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +46,10 @@ class Session:
 
     """
 
+    directory: str
+    mmap_timestamps: bool
+    recordnodes: list[RecordNode] | None
+
     def __init__(self, directory, mmap_timestamps=True):
         """Construct a session object, which provides access to
         data from multiple Open Ephys Record Nodes
@@ -72,13 +77,11 @@ class Session:
         recordnodepaths.sort(key=alphanum_key)
 
         if len(recordnodepaths) == 0:
-
             self.recordings = RecordNode(
                 self.directory, self.mmap_timestamps
             ).recordings
 
         else:
-
             self.recordnodes = [
                 RecordNode(path, self.mmap_timestamps) for path in recordnodepaths
             ]
@@ -89,7 +92,7 @@ class Session:
         return "".join(
             [
                 "\nOpen Ephys Recording Session Object\n",
-                "Directory: " + self.directory + "\n\n" "<object>.recordnodes:\n",
+                "Directory: " + self.directory + "\n\n<object>.recordnodes:\n",
             ]
             + [
                 "  Index " + str(i) + ": " + r.__str__() + "\n"
