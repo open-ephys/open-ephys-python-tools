@@ -2,9 +2,16 @@
 
 ## Unreleased
 
-- The metadata of `Continuous` and `Spike` in the analysis package now are typed dataclasses
-  instead of `dict` objects. This makes accessing metadata more reliable.
-- Automated tests for reading Binary, NWB and OpenEphys data formats have been added.
+- Refactoring without new functionality or API changes
+  - The `Continuous` and `Spike` classes of the three formats now have an explicit interface
+    (i.e. abstract parent class) and have been renamed to `BinaryContinuous`, `BinarySpike` etc.
+  - The metadata of `Continuous` and `Spike` in the analysis package now are typed dataclasses
+    instead of `dict` objects . This makes accessing metadata more reliable.
+  - Type hints have been added to the `analysis` package.
+  - Automated tests for reading Binary, NWB and OpenEphys data formats have been added.
+  - Added a `RecordingFormat` enum for the three formats
+- `BinaryContinuous` and `BinarySpike` now have `__str__` methods to give an overview over
+  their contents.
 
 ## 0.1.4
 
