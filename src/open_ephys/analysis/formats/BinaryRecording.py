@@ -40,8 +40,10 @@ from open_ephys.analysis.recording import (
 )
 from open_ephys.analysis.utils import alphanum_key
 
-oebin_schema_file = os.path.join(os.path.dirname(__file__), "oebin_schema.json")
-OEBIN_SCHEMA = json.load(open(oebin_schema_file, "r"))
+
+def get_schema():
+    oebin_schema_file = os.path.join(os.path.dirname(__file__), "oebin_schema.json")
+    return json.load(open(oebin_schema_file, "r"))
 
 
 class BinaryContinuous(Continuous):

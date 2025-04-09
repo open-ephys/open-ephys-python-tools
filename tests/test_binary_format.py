@@ -1,15 +1,11 @@
-from calendar import c
-from pyexpat.errors import messages
-from numpy import isin
 import pandas
 import pytest
 import os
 import open_ephys.analysis as oe
 from open_ephys.analysis.formats import BinaryRecording
 from open_ephys.analysis.formats.BinaryRecording import (
-    BinaryContinuous,
     BinarySpikes,
-    OEBIN_SCHEMA,
+    get_schema,
 )
 from open_ephys.analysis.recording import (
     ContinuousMetadata,
@@ -78,7 +74,7 @@ def test_validate_oebin(binary_file_path):
         "structure.oebin",
     )
     oebin_json = json.load(open(oebin_file, "r"))
-    jsonschema.validate(instance=oebin_json, schema=OEBIN_SCHEMA)
+    jsonschema.validate(instance=oebin_json, schema=get_schema())
 
 
 def test_open_session(binary_file_path: str):
