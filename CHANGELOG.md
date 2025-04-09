@@ -11,6 +11,8 @@
   - Type hints have been added to the `analysis` package.
   - Automated tests for reading Binary, NWB and OpenEphys data formats have been added.
   - Added a `RecordingFormat` enum for the three formats
+  - Added a JSON schema for validating oebin files
+  - Added a `uv.lock` file for reproducible development environments.
 - `BinaryContinuous` and `BinarySpike` now have `__str__` methods to give an overview over
   their contents.
 
