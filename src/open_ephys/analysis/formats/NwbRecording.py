@@ -71,7 +71,6 @@ class NwbRecording(Recording):
                 1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
             )
             self.metadata["num_channels"] = nwb["acquisition"][dataset]["data"].shape[1]
-            self.metadata["channel_map"] = self.create_channel_map(info)
             self.metadata["bit_volts"] = list(
                 nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6
             )
@@ -254,8 +253,6 @@ class NwbRecording(Recording):
     def detect_recordings(directory, mmap_timestamps=True):
 
         recordings = []
-
-        found_recording = False
 
         nwb_files = glob.glob(os.path.join(directory, "experiment*.nwb"))
         nwb_files.sort()
