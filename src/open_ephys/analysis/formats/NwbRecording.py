@@ -75,10 +75,10 @@ class NwbRecording(Recording):
                 nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6
             )
 
-            self.samples = nwb["acquisition"][dataset]["data"][()]
-            self.sample_numbers = nwb["acquisition"][dataset]["sync"][()]
-            self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
-
+            self.samples = nwb["acquisition"][dataset]["data"]
+            self.sample_numbers = nwb["acquisition"][dataset]["sync"]
+            self.timestamps = nwb["acquisition"][dataset]["timestamps"]
+            
             self.global_timestamps = None
 
         def get_samples(
@@ -195,9 +195,9 @@ class NwbRecording(Recording):
                     stream_id += 1
 
                 ds = self.nwb["acquisition"][dataset]
-                channel_states = ds["data"][()]
-                sample_numbers = ds["sync"][()]
-                timestamps = ds["timestamps"][()]
+                channel_states = ds["data"]
+                sample_numbers = ds["sync"]
+                timestamps = ds["timestamps"]
 
                 events.append(
                     pd.DataFrame(
