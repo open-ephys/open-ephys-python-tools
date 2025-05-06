@@ -1,7 +1,8 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
+Copyright (c) 2025 Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +24,81 @@ SOFTWARE.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
 import warnings
+import numpy as np
+import pandas
+
+
+@dataclass
+class SpikeMetadata:
+    name: str
+    stream_name: str
+    sample_rate: float | None
+    num_channels: int
+
+
+@dataclass
+class ContinuousMetadata:
+    source_node_id: int
+    source_node_name: str
+    stream_name: str
+    sample_rate: float
+    num_channels: int
+    channel_names: list[str] | None
+    bit_volts: list[float]
+
+
+class Continuous(ABC):
+    metadata: ContinuousMetadata
+    samples: np.ndarray
+
+    @abstractmethod
+    def get_samples(
+        self,
+        start_sample_index: int,
+        end_sample_index: int,
+        selected_channels: np.ndarray | None = None,
+        selected_channel_names: list[str] | None = None,
+    ) -> np.ndarray:
+        """
+        Returns samples scaled to microvolts. Converts sample values
+        from 16-bit integers to 64-bit floats.
+
+        Parameters
+        ----------
+        start_sample_index : int
+            Index of the first sample to return
+        end_sample_index : int
+            Index of the last sample to return
+        selected_channels : numpy.ndarray, optional
+            Selects a subset of channels to return based on index.
+            If no channels are selected, all channels are returned.
+        selected_channel_names : List[str], optional
+            Selects a subset of channels to return based on name.
+            If no channels are selected, all channels are returned.
+
+        Returns
+        -------
+        samples : numpy.ndarray (float64)
+
+        """
+        pass
+
+
+class Spikes(ABC):
+    metadata: SpikeMetadata
+    waveforms: np.ndarray | None
+    samples: np.ndarray | None
+    timestamps: np.ndarray | None
+    sample_numbers: np.ndarray | None
+
+
+class RecordingFormat(Enum):
+    nwb = "nwb"
+    binary = "binary"
+    openephys = "open-ephys"
 
 
 class Recording(ABC):
@@ -76,35 +151,58 @@ class Recording(ABC):
     """
 
     @property
-    def continuous(self):
+    def continuous(self) -> list[Continuous] | None:
+        """Returns a list of Continuous objects"""
         if self._continuous is None:
             self.load_continuous()
         return self._continuous
 
     @property
-    def events(self):
+    def events(self) -> pandas.DataFrame | None:
+        """Returns a pandas DataFrame containing events"""
         if self._events is None:
             self.load_events()
         return self._events
 
     @property
-    def spikes(self):
+    def spikes(self) -> list[Spikes] | None:
+        """spikes is a list of spike sources
+        - waveforms (spikes x channels x samples)
+        - sample_numbers (one per sample)
+        - timestamps (one per sample)
+        - electrodes (index of electrode from which each spike originated)
+        - metadata (contains information about each electrode, see `SpikeMetadata`)
+            - electrode_names
+            - bit_volts
+            - source_node_id
+            - stream_name
+        """
         if self._spikes is None:
             self.load_spikes()
         return self._spikes
 
     @property
-    def messages(self):
+    def messages(self) -> pandas.DataFrame | None:
+        """messages is a pandas DataFrame containing three columns:
+        - timestamp
+        - sample_number
+        - message
+
+        """
         if self._messages is None:
             self.load_messages()
         return self._messages
 
     @property
-    def format(self):
+    def format(self) -> RecordingFormat | None:
         return self._format
 
     def __init__(
-        self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True
+        self,
+        directory: str,
+        experiment_index: int = 0,
+        recording_index: int = 0,
+        mmap_timestamps: bool = True,
     ):
         """Construct a Recording object, which provides access to
         data from one recording (start/stop acquisition or
@@ -134,6 +232,7 @@ class Recording(ABC):
         self._events = None
         self._spikes = None
         self._messages = None
+        self._format: RecordingFormat | None = None
 
         self.sync_lines = []
 
@@ -153,8 +252,9 @@ class Recording(ABC):
     def load_messages(self):
         pass
 
+    @staticmethod
     @abstractmethod
-    def detect_format(directory):
+    def detect_format(directory) -> bool:
         """Return True if the format matches the Record Node directory contents"""
         pass
 
@@ -297,22 +397,20 @@ class Recording(ABC):
         main_line["offset"] = main_start_sample
 
         for continuous in self.continuous:
-
             if (
                 continuous.metadata["source_node_id"] == main_line["processor_id"]
             ) and (continuous.metadata["stream_name"] == main_line["stream_name"]):
                 main_line["sample_rate"] = continuous.metadata["sample_rate"]
 
         print(
-            f'Processor ID: {main_line["processor_id"]}, Stream Name: {main_line["stream_name"]}, Line: {main_line["line"]} (main sync line))'
+            f"Processor ID: {main_line['processor_id']}, Stream Name: {main_line['stream_name']}, Line: {main_line['line']} (main sync line))"
         )
-        print(f'  First event sample number: {main_line["start"]}')
+        print(f"  First event sample number: {main_line['start']}")
         print(f"  Last event sample number: {main_events.iloc[-1].sample_number}")
         print(f"  Total sync events: {len(main_events)}")
-        print(f'  Sample rate: {main_line["sample_rate"]}')
+        print(f"  Sample rate: {main_line['sample_rate']}")
 
         for aux in aux_lines:
-
             aux_events = self.events[
                 (self.events.line == aux["line"])
                 & (self.events.processor_id == aux["processor_id"])
@@ -339,22 +437,19 @@ class Recording(ABC):
             aux["sample_rate"] = main_line["sample_rate"]
 
             print(
-                f'Processor ID: {aux["processor_id"]}, Stream Name: {aux["stream_name"]}, Line: {main_line["line"]} (aux sync line))'
+                f"Processor ID: {aux['processor_id']}, Stream Name: {aux['stream_name']}, Line: {main_line['line']} (aux sync line))"
             )
-            print(f'  First event sample number: {aux["start"]}')
+            print(f"  First event sample number: {aux['start']}")
             print(f"  Last event sample number: {aux_events.iloc[-1].sample_number}")
             print(f"  Total sync events: {len(aux_events)}")
-            print(f'  Scale factor: {aux["scaling"]}')
-            print(f'  Actual sample rate: {aux["sample_rate"] / aux["scaling"]}')
+            print(f"  Scale factor: {aux['scaling']}")
+            print(f"  Actual sample rate: {aux['sample_rate'] / aux['scaling']}")
 
         for sync_line in self.sync_lines:  # loop through all sync lines
-
             for continuous in self.continuous:
-
                 if (
                     continuous.metadata["source_node_id"] == sync_line["processor_id"]
                 ) and (continuous.metadata["stream_name"] == sync_line["stream_name"]):
-
                     continuous.global_timestamps = (
                         continuous.sample_numbers - sync_line["start"]
                     ) * sync_line["scaling"] + sync_line["offset"]

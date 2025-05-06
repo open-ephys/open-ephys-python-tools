@@ -1,0 +1,2 @@
+Software Time (milliseconds since midnight Jan 1st 1970 UTC): 1743680304611
+Start Time for File Reader (100) - example_data @ 40000 Hz: 40091

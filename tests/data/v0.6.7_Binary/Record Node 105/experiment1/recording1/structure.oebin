@@ -1,0 +1,373 @@
+{
+    "GUI version": "0.6.7",
+    "continuous": [
+      {
+        "folder_name": "File_Reader-100.example_data/",
+        "sample_rate": 40000.0,
+        "source_processor_name": "File Reader",
+        "source_processor_id": 100,
+        "stream_name": "example_data",
+        "recorded_processor": "Record Node",
+        "recorded_processor_id": 105,
+        "num_channels": 16,
+        "channels": [
+          {
+            "channel_name": "CH1",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH2",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH3",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH4",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH5",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH6",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH7",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH8",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH9",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH10",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH11",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH12",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH13",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH14",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH15",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          },
+          {
+            "channel_name": "CH16",
+            "description": "description",
+            "identifier": "",
+            "history": "File Reader -> Network Events -> Record Node -> LFP Viewer -> Bandpass Filter -> Spike Detector -> Record Node",
+            "bit_volts": 0.05000000074505806,
+            "units": ""
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "folder_name": "File_Reader-100.example_data/TTL/",
+        "channel_name": "All TTL events",
+        "description": "All TTL events loaded for the current input data source",
+        "identifier": "sourceevent",
+        "sample_rate": 40000.0,
+        "type": "int16",
+        "source_processor": "File Reader",
+        "stream_name": "example_data",
+        "initial_state": 0
+      },
+      {
+        "folder_name": "Network_Events-108.example_data/TTL/",
+        "channel_name": "Network Events output",
+        "description": "Triggers whenever \"TTL\" is received on the port.",
+        "identifier": "external.network.ttl",
+        "sample_rate": 40000.0,
+        "type": "int16",
+        "source_processor": "Network Events",
+        "stream_name": "example_data",
+        "initial_state": 0
+      },
+      {
+        "folder_name": "MessageCenter/",
+        "channel_name": "Messages",
+        "description": "Broadcasts messages from the MessageCenter",
+        "identifier": "messagecenter.events",
+        "sample_rate": 40000.0,
+        "type": "string",
+        "source_processor": "Message Center",
+        "stream_name": "example_data"
+      }
+    ],
+    "spikes": [
+      {
+        "name": "Stereotrode 1",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 1",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 1/",
+        "source_channels": [
+          {
+            "name": "CH1",
+            "local_index": 0,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH2",
+            "local_index": 1,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 2",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 2",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 2/",
+        "source_channels": [
+          {
+            "name": "CH3",
+            "local_index": 2,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH4",
+            "local_index": 3,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 3",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 3",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 3/",
+        "source_channels": [
+          {
+            "name": "CH5",
+            "local_index": 4,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH6",
+            "local_index": 5,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 4",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 4",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 4/",
+        "source_channels": [
+          {
+            "name": "CH7",
+            "local_index": 6,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH8",
+            "local_index": 7,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 5",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 5",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 5/",
+        "source_channels": [
+          {
+            "name": "CH9",
+            "local_index": 8,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH10",
+            "local_index": 9,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 6",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 6",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 6/",
+        "source_channels": [
+          {
+            "name": "CH11",
+            "local_index": 10,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH12",
+            "local_index": 11,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 7",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 7",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 7/",
+        "source_channels": [
+          {
+            "name": "CH13",
+            "local_index": 12,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH14",
+            "local_index": 13,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      },
+      {
+        "name": "Stereotrode 8",
+        "description": "Stereotrode from Spike Detector 104",
+        "identifier": "100|example_data|104|Stereotrode 8",
+        "source_processor_id": 104,
+        "stream_name": "example_data",
+        "sample_rate": 40000.0,
+        "num_channels": 2,
+        "pre_peak_samples": 8,
+        "post_peak_samples": 32,
+        "folder": "Spike_Detector-104.example_data/Stereotrode 8/",
+        "source_channels": [
+          {
+            "name": "CH15",
+            "local_index": 14,
+            "bit_volts": 0.05000000074505806
+          },
+          {
+            "name": "CH16",
+            "local_index": 15,
+            "bit_volts": 0.05000000074505806
+          }
+        ]
+      }
+    ]
+  }

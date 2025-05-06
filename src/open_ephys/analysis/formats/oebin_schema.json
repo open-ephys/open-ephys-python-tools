@@ -1,0 +1,208 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "GUI version": {
+            "type": "string"
+        },
+        "continuous": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "folder_name": {
+                        "type": "string"
+                    },
+                    "sample_rate": {
+                        "type": "number"
+                    },
+                    "source_processor_name": {
+                        "type": "string"
+                    },
+                    "source_processor_id": {
+                        "type": "integer"
+                    },
+                    "stream_name": {
+                        "type": "string"
+                    },
+                    "recorded_processor": {
+                        "type": "string"
+                    },
+                    "recorded_processor_id": {
+                        "type": "integer"
+                    },
+                    "num_channels": {
+                        "type": "integer"
+                    },
+                    "channels": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "channel_name": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "identifier": {
+                                    "type": "string"
+                                },
+                                "history": {
+                                    "type": "string"
+                                },
+                                "bit_volts": {
+                                    "type": "number"
+                                },
+                                "units": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "channel_name",
+                                "description",
+                                "history",
+                                "bit_volts"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "folder_name",
+                    "sample_rate",
+                    "source_processor_name",
+                    "source_processor_id",
+                    "stream_name",
+                    "recorded_processor",
+                    "recorded_processor_id",
+                    "num_channels",
+                    "channels"
+                ]
+            }
+        },
+        "events": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "folder_name": {
+                        "type": "string"
+                    },
+                    "channel_name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "identifier": {
+                        "type": "string"
+                    },
+                    "sample_rate": {
+                        "type": "number"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "source_processor": {
+                        "type": "string"
+                    },
+                    "stream_name": {
+                        "type": "string"
+                    },
+                    "initial_state": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "folder_name",
+                    "channel_name",
+                    "description",
+                    "identifier",
+                    "sample_rate",
+                    "type",
+                    "source_processor",
+                    "stream_name"
+                ]
+            }
+        },
+        "spikes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "identifier": {
+                        "type": "string"
+                    },
+                    "source_processor_id": {
+                        "type": "integer"
+                    },
+                    "stream_name": {
+                        "type": "string"
+                    },
+                    "sample_rate": {
+                        "type": "number"
+                    },
+                    "num_channels": {
+                        "type": "integer"
+                    },
+                    "pre_peak_samples": {
+                        "type": "integer"
+                    },
+                    "post_peak_samples": {
+                        "type": "integer"
+                    },
+                    "folder": {
+                        "type": "string"
+                    },
+                    "source_channels": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "local_index": {
+                                    "type": "integer"
+                                },
+                                "bit_volts": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "local_index",
+                                "bit_volts"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "identifier",
+                    "source_processor_id",
+                    "stream_name",
+                    "sample_rate",
+                    "num_channels",
+                    "pre_peak_samples",
+                    "post_peak_samples",
+                    "folder",
+                    "source_channels"
+                ]
+            }
+        }
+    },
+    "required": [
+        "GUI version"
+    ]
+}

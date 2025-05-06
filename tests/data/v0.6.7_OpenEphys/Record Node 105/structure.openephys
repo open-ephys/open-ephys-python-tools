@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<EXPERIMENT format_version="0.6" number="1">
+  <RECORDING number="1">
+    <STREAM name="example_data" source_node_id="100" source_node_name="File Reader"
+            sample_rate="40000.0">
+      <CHANNEL name="CH1" bitVolts="0.05000000074505806" filename="100_example-data_CH1.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH2" bitVolts="0.05000000074505806" filename="100_example-data_CH2.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH3" bitVolts="0.05000000074505806" filename="100_example-data_CH3.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH4" bitVolts="0.05000000074505806" filename="100_example-data_CH4.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH5" bitVolts="0.05000000074505806" filename="100_example-data_CH5.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH6" bitVolts="0.05000000074505806" filename="100_example-data_CH6.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH7" bitVolts="0.05000000074505806" filename="100_example-data_CH7.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH8" bitVolts="0.05000000074505806" filename="100_example-data_CH8.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH9" bitVolts="0.05000000074505806" filename="100_example-data_CH9.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH10" bitVolts="0.05000000074505806" filename="100_example-data_CH10.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH11" bitVolts="0.05000000074505806" filename="100_example-data_CH11.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH12" bitVolts="0.05000000074505806" filename="100_example-data_CH12.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH13" bitVolts="0.05000000074505806" filename="100_example-data_CH13.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH14" bitVolts="0.05000000074505806" filename="100_example-data_CH14.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH15" bitVolts="0.05000000074505806" filename="100_example-data_CH15.continuous"
+               position="1024.0"/>
+      <CHANNEL name="CH16" bitVolts="0.05000000074505806" filename="100_example-data_CH16.continuous"
+               position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 1" bitVolts="0.05000000074505806" filename="Stereotrode1_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 2" bitVolts="0.05000000074505806" filename="Stereotrode2_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 3" bitVolts="0.05000000074505806" filename="Stereotrode3_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 4" bitVolts="0.05000000074505806" filename="Stereotrode4_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 5" bitVolts="0.05000000074505806" filename="Stereotrode5_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 6" bitVolts="0.05000000074505806" filename="Stereotrode6_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 7" bitVolts="0.05000000074505806" filename="Stereotrode7_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <SPIKECHANNEL name="Stereotrode 8" bitVolts="0.05000000074505806" filename="Stereotrode8_example-data.spikes"
+                    num_channels="2" num_samples="40" position="1024.0"/>
+      <EVENTS filename="100_example-data.events"/>
+      <TIMESTAMPS filename="100_example-data.timestamps"/>
+    </STREAM>
+  </RECORDING>
+</EXPERIMENT>

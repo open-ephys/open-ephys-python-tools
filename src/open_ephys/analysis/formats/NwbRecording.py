@@ -1,7 +1,8 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
+Copyright (c) 2025 Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,123 +25,121 @@ SOFTWARE.
 
 import glob
 import os
+from pathlib import Path
 import h5py as h5
-
 import numpy as np
 import pandas as pd
 
-from open_ephys.analysis.recording import Recording
+from open_ephys.analysis.recording import (
+    Continuous,
+    ContinuousMetadata,
+    Spikes,
+    SpikeMetadata,
+    RecordingFormat,
+    Recording,
+)
+
+
+class NwbSpikes(Spikes):
+    def __init__(self, nwb: h5.File, dataset: str):
+        self.metadata = SpikeMetadata(
+            name=dataset.split(".")[-1],
+            stream_name=dataset.split(".")[-2],
+            num_channels=nwb["acquisition"][dataset]["data"][()].shape[1],
+            sample_rate=None,  # FIXME:
+        )
+
+        self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
+        self.sample_numbers = nwb["acquisition"][dataset]["sync"][()]
+        self.waveforms = nwb["acquisition"][dataset]["data"][()].astype("float64")
+
+        self.waveforms *= nwb["acquisition"][dataset]["channel_conversion"][0] * 1e6
+
+
+class NwbContinuous(Continuous):
+    def __init__(self, nwb: h5.File, dataset: str):
+
+        source_node = dataset.split(".")[0]
+        stream_name = dataset.split(".")[1]
+        source_node_id = int(source_node[-3:])
+        source_node_name = source_node[:-4]
+
+        self.metadata = ContinuousMetadata(
+            source_node_id=source_node_id,
+            source_node_name=source_node_name,
+            stream_name=stream_name,
+            sample_rate=np.around(
+                1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
+            ),
+            num_channels=nwb["acquisition"][dataset]["data"].shape[1],
+            bit_volts=list(nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6),
+            channel_names=None,  # TODO: add this
+        )
+        self.samples = nwb["acquisition"][dataset]["data"]
+        self.sample_numbers = nwb["acquisition"][dataset]["sync"]
+        self.timestamps = nwb["acquisition"][dataset]["timestamps"]
+
+        self.global_timestamps = None
+
+    def get_samples(
+        self,
+        start_sample_index,
+        end_sample_index,
+        selected_channels=None,
+        selected_channel_names=None,
+    ):
+        """
+        Returns samples scaled to microvolts. Converts sample values
+        from 16-bit integers to 64-bit floats.
+
+        Parameters
+        ----------
+        start_sample_index : int
+            Index of the first sample to return
+        end_sample_index : int
+            Index of the last sample to return
+        selected_channels : numpy.ndarray, optional
+            Selects a subset of channels to return based on index.
+            If no channels are selected, all channels are returned.
+        selected_channel_names : List[str], optional
+            Selects a subset of channels to return based on name.
+            If no channels are selected, all channels are returned.
+
+        Returns
+        -------
+        samples : numpy.ndarray (float64)
+
+        """
+
+        if selected_channels is not None and selected_channel_names is not None:
+            raise ValueError(
+                "Cannot specify both `selected_channels`"
+                + " and `selected_channel_names` as input arguments"
+            )
+
+        if selected_channel_names:
+            selected_channels = [
+                self.metadata.channel_names.index(value)
+                for value in selected_channel_names
+            ]
+            selected_channels = np.array(selected_channels, dtype=np.uint32)
+
+        samples = self.samples[
+            start_sample_index:end_sample_index, selected_channels
+        ].astype("float64")
+
+        for idx, ch in enumerate(selected_channels):
+            samples[:, idx] = samples[:, idx] * self.metadata.bit_volts[ch]
+
+        return samples
 
 
 class NwbRecording(Recording):
 
-    class Spikes:
-
-        def __init__(self, nwb, dataset):
-
-            self.metadata = {}
-            self.metadata["name"] = dataset.split(".")[-1]
-            self.metadata["stream_name"] = dataset.split(".")[-2]
-            self.metadata["num_channels"] = nwb["acquisition"][dataset]["data"][
-                ()
-            ].shape[1]
-
-            self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
-            self.sample_numbers = nwb["acquisition"][dataset]["sync"][()]
-            self.waveforms = nwb["acquisition"][dataset]["data"][()].astype("float64")
-
-            self.waveforms *= nwb["acquisition"][dataset]["channel_conversion"][0] * 1e6
-
-    class Continuous:
-
-        def __init__(self, nwb, dataset):
-
-            self.metadata = {}
-
-            source_node = dataset.split(".")[0]
-            stream_name = dataset.split(".")[1]
-            source_node_id = int(source_node[-3:])
-            source_node_name = source_node[:-4]
-
-            self.metadata["source_node_id"] = source_node_id
-            self.metadata["source_node_name"] = source_node_name
-
-            self.metadata["stream_name"] = stream_name
-
-            self.metadata["sample_rate"] = np.around(
-                1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
-            )
-            self.metadata["num_channels"] = nwb["acquisition"][dataset]["data"].shape[1]
-            self.metadata["bit_volts"] = list(
-                nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6
-            )
-
-            self.samples = nwb["acquisition"][dataset]["data"]
-            self.sample_numbers = nwb["acquisition"][dataset]["sync"]
-            self.timestamps = nwb["acquisition"][dataset]["timestamps"]
-            
-            self.global_timestamps = None
-
-        def get_samples(
-            self,
-            start_sample_index,
-            end_sample_index,
-            selected_channels=None,
-            selected_channel_names=None,
-        ):
-            """
-            Returns samples scaled to microvolts. Converts sample values
-            from 16-bit integers to 64-bit floats.
-
-            Parameters
-            ----------
-            start_sample_index : int
-                Index of the first sample to return
-            end_sample_index : int
-                Index of the last sample to return
-            selected_channels : numpy.ndarray, optional
-                Selects a subset of channels to return based on index.
-                If no channels are selected, all channels are returned.
-            selected_channel_names : List[str], optional
-                Selects a subset of channels to return based on name.
-                If no channels are selected, all channels are returned.
-
-            Returns
-            -------
-            samples : numpy.ndarray (float64)
-
-            """
-
-            if selected_channels is not None and selected_channel_names is not None:
-                raise ValueError(
-                    "Cannot specify both `selected_channels`" +
-                    " and `selected_channel_names` as input arguments"
-                )
-
-            if selected_channels is None and selected_channel_names is None:
-                selected_channels = np.arange(
-                    self.metadata["num_channels"], dtype=np.uint32
-                )
-
-            if selected_channel_names:
-                selected_channels = [self.metadata['channel_names'].index(value) 
-                                     for value in selected_channel_names]
-                selected_channels = np.array(selected_channels, dtype=np.uint32)
-
-            samples = self.samples[
-                start_sample_index:end_sample_index, selected_channels
-            ].astype("float64")
-
-            for idx, ch in enumerate(selected_channels):
-                samples[:, idx] = samples[:, idx] * \
-                    self.metadata["bit_volts"][ch]
-
-            return samples
-
-    def __init__(self, directory, experiment_index=0, recording_index=0):
+    def __init__(self, directory: str, experiment_index=0, recording_index=0):
 
         Recording.__init__(self, directory, experiment_index, recording_index)
-        self._format = "nwb"
+        self._format = RecordingFormat.nwb
         self.nwb = h5.File(
             os.path.join(
                 self.directory, "experiment" + str(self.experiment_index + 1) + ".nwb"
@@ -157,7 +156,7 @@ class NwbRecording(Recording):
         datasets = list(self.nwb["acquisition"].keys())
 
         self._continuous = [
-            self.Continuous(self.nwb, dataset)
+            NwbContinuous(self.nwb, dataset)
             for dataset in datasets
             if self.nwb["acquisition"][dataset].attrs["neurodata_type"]
             == "ElectricalSeries"
@@ -168,7 +167,7 @@ class NwbRecording(Recording):
         datasets = list(self.nwb["acquisition"].keys())
 
         self._spikes = [
-            self.Spikes(self.nwb, dataset)
+            NwbSpikes(self.nwb, dataset)
             for dataset in datasets
             if self.nwb["acquisition"][dataset].attrs["neurodata_type"]
             == "SpikeEventSeries"
@@ -217,7 +216,9 @@ class NwbRecording(Recording):
         )
 
     def load_messages(self):
-        pass
+        raise NotImplementedError(
+            "Loading messages from NWB2 format is noy yet implemented."
+        )
 
     def __str__(self):
         """Returns a string with information about the Recording"""

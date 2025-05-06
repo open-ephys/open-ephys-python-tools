@@ -1,0 +1,17 @@
+1743680325032, Software Time (milliseconds since midnight Jan 1st 1970 UTC)
+251635, Start Time for File Reader (100) - example_data @ 40000 Hz
+251635, TTL Line=1 State=0
+252488, TTL Line=3 State=0
+253341, TTL Line=8 State=0
+254194, TTL Line=13 State=0
+255047, TTL Line=18 State=0
+255900, TTL Line=25 State=1
+256753, TTL Line=27 State=0
+257606, TTL Line=32 State=0
+258459, TTL Line=40 State=0
+259312, TTL Line=45 State=0
+260165, TTL Line=48 State=1
+261018, TTL Line=51 State=0
+261871, TTL Line=57 State=1
+262724, TTL Line=62 State=0
+263577, TTL Line=64 State=0

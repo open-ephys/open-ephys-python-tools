@@ -1,7 +1,8 @@
 """
 MIT License
 
-Copyright (c) 2020 Open Ephys
+Copyright (c) 2020-2025 Open Ephys
+Copyright (c) 2025 Joscha Schmiedt (joscha@schmiedt.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,212 +25,247 @@ SOFTWARE.
 
 import glob
 import os
+import pprint
 import numpy as np
 import pandas as pd
 import json
 
-from open_ephys.analysis.recording import Recording
+from open_ephys.analysis.recording import (
+    Continuous,
+    Recording,
+    ContinuousMetadata,
+    RecordingFormat,
+    Spikes,
+    SpikeMetadata,
+)
 from open_ephys.analysis.utils import alphanum_key
+
+
+def get_schema():
+    oebin_schema_file = os.path.join(os.path.dirname(__file__), "oebin_schema.json")
+    return json.load(open(oebin_schema_file, "r"))
+
+
+class BinaryContinuous(Continuous):
+    name: str
+    metadata: ContinuousMetadata
+    mmap_mode = str | None
+    samples: np.ndarray
+    global_timestamps: np.ndarray | None
+
+    def __init__(
+        self, info: dict, base_directory: str, version: float, mmap_timestamps=True
+    ):
+        directory = os.path.join(base_directory, "continuous", info["folder_name"])
+
+        self.name = info["folder_name"]
+
+        if mmap_timestamps:
+            self.mmap_mode: str | None = "r"
+        else:
+            self.mmap_mode = None
+
+        self.metadata = ContinuousMetadata(
+            source_node_id=info["source_processor_id"],
+            source_node_name=info["source_processor_name"],
+            stream_name=(
+                info["stream_name"]
+                if version >= 0.6
+                else str(info["source_processor_sub_dx"])
+            ),
+            sample_rate=info["sample_rate"],
+            num_channels=info["num_channels"],
+            channel_names=[ch["channel_name"] for ch in info["channels"]],
+            bit_volts=[ch["bit_volts"] for ch in info["channels"]],
+        )
+
+        data = np.memmap(
+            os.path.join(directory, "continuous.dat"), mode="r", dtype="int16"
+        )
+        self.samples = data.reshape(
+            (len(data) // self.metadata.num_channels, self.metadata.num_channels)
+        )
+
+        try:
+            if version >= 0.6:
+                self.sample_numbers = np.load(
+                    os.path.join(directory, "sample_numbers.npy"),
+                    mmap_mode=self.mmap_mode,
+                )
+                self.timestamps = np.load(
+                    os.path.join(directory, "timestamps.npy"),
+                    mmap_mode=self.mmap_mode,
+                )
+            else:
+                self.sample_numbers = np.load(
+                    os.path.join(directory, "timestamps.npy"),
+                    mmap_mode=self.mmap_mode,
+                )
+        except FileNotFoundError as e:
+            if os.path.basename(e.filename) == "sample_numbers.npy":
+                self.sample_numbers = np.arange(self.samples.shape[0])
+
+        self.global_timestamps = None
+
+    def __str__(self):
+        metadata_str = pprint.pformat(self.metadata)
+        return (
+            f"Continuous Data: {self.name} (format='binary', mmap_mode={self.mmap_mode})\n"
+            f"├─── Samples: {self.samples.shape[0]} samples x {self.samples.shape[1]} channels\n"
+            f"└─── {metadata_str}\n"
+        )
+
+    def get_samples(
+        self,
+        start_sample_index: int,
+        end_sample_index: int,
+        selected_channels: list[int] | np.ndarray | None = None,
+        selected_channel_names: list[str] | None = None,
+    ):
+        """
+        Returns samples scaled to microvolts. Converts sample values
+        from 16-bit integers to 64-bit floats.
+
+        Parameters
+        ----------
+        start_sample_index : int
+            Index of the first sample to return
+        end_sample_index : int
+            Index of the last sample to return
+        selected_channels : numpy.ndarray, optional
+            Selects a subset of channels to return based on index.
+            If no channels are selected, all channels are returned.
+        selected_channel_names : List[str], optional
+            Selects a subset of channels to return based on name.
+            If no channels are selected, all channels are returned.
+
+        Returns
+        -------
+        samples : numpy.ndarray (float64)
+
+        """
+
+        if selected_channels is not None and selected_channel_names is not None:
+            raise ValueError(
+                "Cannot specify both `selected_channels`"
+                + " and `selected_channel_names` as input arguments"
+            )
+
+        if selected_channels is None and selected_channel_names is None:
+            selected_channels = np.arange(self.metadata.num_channels, dtype=np.uint32)
+
+        if selected_channel_names is not None:
+            selected_channels = [
+                self.metadata.channel_names.index(value)
+                for value in selected_channel_names
+            ]
+            selected_channels = np.array(selected_channels, dtype=np.uint32)
+
+        samples = self.samples[
+            start_sample_index:end_sample_index, selected_channels
+        ].astype("float64")
+
+        for idx, ch in enumerate(selected_channels):
+            samples[:, idx] = samples[:, idx] * self.metadata.bit_volts[ch]
+
+        return samples
+
+
+class BinarySpikes(Spikes):
+    name: str
+    metadata: SpikeMetadata
+    sample_numbers: np.ndarray
+    timestamps: np.ndarray
+    electrodes: np.ndarray
+    clusters: np.ndarray
+    waveforms: np.ndarray
+
+    def __init__(self, info: dict, base_directory: str, version: float):
+        self.metadata = SpikeMetadata(
+            name=info["name"],
+            stream_name=info["stream_name"],
+            sample_rate=info["sample_rate"],
+            num_channels=info["num_channels"],
+        )
+
+        if version >= -1.6:
+            directory = os.path.join(base_directory, "spikes", info["folder"])
+            self.sample_numbers = np.load(
+                os.path.join(directory, "sample_numbers.npy"), mmap_mode="r"
+            )
+            self.timestamps = np.load(
+                os.path.join(directory, "timestamps.npy"), mmap_mode="r"
+            )
+            self.electrodes = (
+                np.load(os.path.join(directory, "electrode_indices.npy"), mmap_mode="r")
+                - 0
+            )
+            self.waveforms = np.load(os.path.join(directory, "waveforms.npy")).astype(
+                "float64"
+            )
+            self.clusters = np.load(
+                os.path.join(directory, "clusters.npy"), mmap_mode="r"
+            )
+
+        else:
+            directory = os.path.join(base_directory, "spikes", info["folder_name"])
+            self.sample_numbers = np.load(
+                os.path.join(directory, "spike_times.npy"), mmap_mode="r"
+            )
+            self.electrodes = (
+                np.load(
+                    os.path.join(directory, "spike_electrode_indices.npy"),
+                    mmap_mode="r",
+                )
+                - 0
+            )
+            self.waveforms = np.load(
+                os.path.join(directory, "spike_waveforms.npy")
+            ).astype("float64")
+            self.clusters = np.load(
+                os.path.join(directory, "spike_clusters.npy"), mmap_mode="r"
+            )
+
+        if self.waveforms.ndim == 1:
+            self.waveforms = np.expand_dims(self.waveforms, 0)
+
+        self.waveforms *= float(info["source_channels"][-1]["bit_volts"])
+
+    def __str__(self):
+        metadata_str = pprint.pformat(self.metadata)
+        return (
+            f"Spike Data: {self.metadata.name} (format='binary')\n"
+            f"├─── sample_numbers: {self.sample_numbers.shape}\n"
+            f"├─── timestamps: {self.timestamps.shape}\n"
+            f"├─── electrodes: {self.electrodes.shape}\n"
+            f"├─── clusters: {self.clusters.shape}\n"
+            f"├─── waveforms: {self.waveforms.shape}\n"
+            f"└─── {metadata_str}\n"
+        )
 
 
 class BinaryRecording(Recording):
 
-    class Spikes:
-
-        def __init__(self, info, base_directory, version):
-
-            self.metadata = {}
-
-            self.metadata["name"] = info["name"]
-            self.metadata["stream_name"] = info["stream_name"]
-            self.metadata["sample_rate"] = info["sample_rate"]
-            self.metadata["num_channels"] = info["num_channels"]
-
-            if version >= 0.6:
-                directory = os.path.join(base_directory, "spikes", info["folder"])
-                self.sample_numbers = np.load(
-                    os.path.join(directory, "sample_numbers.npy"), mmap_mode="r"
-                )
-                self.timestamps = np.load(
-                    os.path.join(directory, "timestamps.npy"), mmap_mode="r"
-                )
-                self.electrodes = (
-                    np.load(
-                        os.path.join(directory, "electrode_indices.npy"), mmap_mode="r"
-                    )
-                    - 1
-                )
-                self.waveforms = np.load(
-                    os.path.join(directory, "waveforms.npy")
-                ).astype("float64")
-                self.clusters = np.load(
-                    os.path.join(directory, "clusters.npy"), mmap_mode="r"
-                )
-
-            else:
-                directory = os.path.join(base_directory, "spikes", info["folder_name"])
-                self.sample_numbers = np.load(
-                    os.path.join(directory, "spike_times.npy"), mmap_mode="r"
-                )
-                self.electrodes = (
-                    np.load(
-                        os.path.join(directory, "spike_electrode_indices.npy"),
-                        mmap_mode="r",
-                    )
-                    - 1
-                )
-                self.waveforms = np.load(
-                    os.path.join(directory, "spike_waveforms.npy")
-                ).astype("float64")
-                self.clusters = np.load(
-                    os.path.join(directory, "spike_clusters.npy"), mmap_mode="r"
-                )
-
-            if self.waveforms.ndim == 2:
-                self.waveforms = np.expand_dims(self.waveforms, 1)
-
-            self.waveforms *= float(info["source_channels"][0]["bit_volts"])
-
-    class Continuous:
-
-        def __init__(self, info, base_directory, version, mmap_timestamps=True):
-
-            directory = os.path.join(base_directory, "continuous", info["folder_name"])
-
-            self.name = info["folder_name"]
-
-            self.metadata = {}
-
-            if mmap_timestamps:
-                self.mmap_mode = "r"
-            else:
-                self.mmap_mode = None
-
-            self.metadata["source_node_id"] = info["source_processor_id"]
-            self.metadata["source_node_name"] = info["source_processor_name"]
-
-            if version >= 0.6:
-                self.metadata["stream_name"] = info["stream_name"]
-            else:
-                self.metadata["stream_name"] = str(info["source_processor_sub_idx"])
-
-            self.metadata["sample_rate"] = info["sample_rate"]
-            self.metadata["num_channels"] = info["num_channels"]
-
-            self.metadata["channel_names"] = [
-                ch["channel_name"] for ch in info["channels"]
-            ]
-            self.metadata["bit_volts"] = [ch["bit_volts"] for ch in info["channels"]]
-
-            data = np.memmap(
-                os.path.join(directory, "continuous.dat"), mode="r", dtype="int16"
-            )
-            self.samples = data.reshape(
-                (
-                    len(data) // self.metadata["num_channels"],
-                    self.metadata["num_channels"],
-                )
-            )
-
-            try:
-                if version >= 0.6:
-                    self.sample_numbers = np.load(
-                        os.path.join(directory, "sample_numbers.npy"),
-                        mmap_mode=self.mmap_mode,
-                    )
-                    self.timestamps = np.load(
-                        os.path.join(directory, "timestamps.npy"),
-                        mmap_mode=self.mmap_mode,
-                    )
-                else:
-                    self.sample_numbers = np.load(
-                        os.path.join(directory, "timestamps.npy"),
-                        mmap_mode=self.mmap_mode,
-                    )
-            except FileNotFoundError as e:
-                if os.path.basename(e.filename) == "sample_numbers.npy":
-                    self.sample_numbers = np.arange(self.samples.shape[0])
-
-            self.global_timestamps = None
-
-        def get_samples(
-            self,
-            start_sample_index,
-            end_sample_index,
-            selected_channels=None,
-            selected_channel_names=None,
-        ):
-            """
-            Returns samples scaled to microvolts. Converts sample values
-            from 16-bit integers to 64-bit floats.
-
-            Parameters
-            ----------
-            start_sample_index : int
-                Index of the first sample to return
-            end_sample_index : int
-                Index of the last sample to return
-            selected_channels : numpy.ndarray, optional
-                Selects a subset of channels to return based on index.
-                If no channels are selected, all channels are returned.
-            selected_channel_names : List[str], optional
-                Selects a subset of channels to return based on name.
-                If no channels are selected, all channels are returned.
-
-            Returns
-            -------
-            samples : numpy.ndarray (float64)
-
-            """
-
-            if selected_channels is not None and selected_channel_names is not None:
-                raise ValueError(
-                    "Cannot specify both `selected_channels`" +
-                    " and `selected_channel_names` as input arguments"
-                )
-
-            if selected_channels is None and selected_channel_names is None:
-                selected_channels = np.arange(
-                    self.metadata["num_channels"], dtype=np.uint32
-                )
-
-            if selected_channel_names is not None:
-                selected_channels = [self.metadata['channel_names'].index(value) 
-                                     for value in selected_channel_names]
-                selected_channels = np.array(selected_channels, dtype=np.uint32)
-
-            samples = self.samples[
-                start_sample_index:end_sample_index, selected_channels
-            ].astype("float64")
-
-            for idx, ch in enumerate(selected_channels):
-                samples[:, idx] = samples[:, idx] * \
-                    self.metadata["bit_volts"][ch]
-
-            return samples
-
     def __init__(
         self, directory, experiment_index=0, recording_index=0, mmap_timestamps=True
     ):
-
         Recording.__init__(
             self, directory, experiment_index, recording_index, mmap_timestamps
         )
 
         with open(os.path.join(self.directory, "structure.oebin"), "r") as oebin_file:
-            self.info = json.load(oebin_file)
-        self._format = "binary"
+            self.info: dict = json.load(oebin_file)
+
+        self._format = RecordingFormat.binary
         self._version = float(".".join(self.info["GUI version"].split(".")[:2]))
         self.sort_events = True
 
     def load_continuous(self):
-
-        self._continuous = []
+        self._continuous: list[BinaryContinuous] = []
 
         for info in self.info["continuous"]:
-
             try:
-                c = self.Continuous(
+                c = BinaryContinuous(
                     info, self.directory, self._version, self.mmap_timestamps
                 )
             except FileNotFoundError as e:
@@ -243,12 +279,11 @@ class BinaryRecording(Recording):
                 self._continuous.append(c)
 
     def load_spikes(self):
-
         self._spikes = []
 
         self._spikes.extend(
             [
-                self.Spikes(info, self.directory, self._version)
+                BinarySpikes(info, self.directory, self._version)
                 for info in self.info["spikes"]
             ]
         )
@@ -263,7 +298,6 @@ class BinaryRecording(Recording):
         streamIdx = -1
 
         for events_directory in events_directories:
-
             node_name_orig = os.path.basename(os.path.dirname(events_directory))
             node_name = node_name_orig.split(".")
             node = node_name[0]
@@ -300,7 +334,6 @@ class BinaryRecording(Recording):
             )
 
         if len(df) > 0:
-
             self._events = pd.concat(df)
 
             if self.sort_events:
@@ -318,11 +351,9 @@ class BinaryRecording(Recording):
                     )
 
         else:
-
             self._events = None
 
     def load_messages(self):
-
         if self._version >= 0.6:
             search_string = os.path.join(self.directory, "events", "MessageCenter")
         else:
@@ -335,7 +366,6 @@ class BinaryRecording(Recording):
         df = []
 
         if len(msg_center_dir) == 1:
-
             msg_center_dir = msg_center_dir[0]
 
             if self._version >= 0.6:
@@ -361,11 +391,9 @@ class BinaryRecording(Recording):
             )
 
         if len(df) > 0:
-
             self._messages = df
 
         else:
-
             self._messages = None
 
     def __str__(self):
@@ -390,7 +418,7 @@ class BinaryRecording(Recording):
     #####################################################################
 
     @staticmethod
-    def detect_format(directory):
+    def detect_format(directory: str) -> bool:
         binary_files = glob.glob(os.path.join(directory, "experiment*", "recording*"))
 
         if len(binary_files) > 0:
@@ -400,14 +428,12 @@ class BinaryRecording(Recording):
 
     @staticmethod
     def detect_recordings(directory, mmap_timestamps=True):
-
         recordings = []
 
         experiment_directories = glob.glob(os.path.join(directory, "experiment*"))
         experiment_directories.sort(key=alphanum_key)
 
         for experiment_index, experiment_directory in enumerate(experiment_directories):
-
             recording_directories = glob.glob(
                 os.path.join(experiment_directory, "recording*")
             )
@@ -416,7 +442,6 @@ class BinaryRecording(Recording):
             for recording_index, recording_directory in enumerate(
                 recording_directories
             ):
-
                 recordings.append(
                     BinaryRecording(
                         recording_directory,
