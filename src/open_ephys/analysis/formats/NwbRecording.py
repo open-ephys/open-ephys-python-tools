@@ -72,14 +72,12 @@ class NwbContinuous(Continuous):
                 1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
             ),
             num_channels=nwb["acquisition"][dataset]["data"].shape[1],
-            # TODO: implement channel names
-            channel_names=None,
             bit_volts=list(nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6),
+            channel_names=None,  # TODO: add this
         )
-
-        self.samples = nwb["acquisition"][dataset]["data"][()]
-        self.sample_numbers = nwb["acquisition"][dataset]["sync"][()]
-        self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
+        self.samples = nwb["acquisition"][dataset]["data"]
+        self.sample_numbers = nwb["acquisition"][dataset]["sync"]
+        self.timestamps = nwb["acquisition"][dataset]["timestamps"]
 
         self.global_timestamps = None
 
@@ -118,9 +116,6 @@ class NwbContinuous(Continuous):
                 "Cannot specify both `selected_channels`"
                 + " and `selected_channel_names` as input arguments"
             )
-
-        if selected_channels is None and selected_channel_names is None:
-            selected_channels = np.arange(self.metadata.num_channels, dtype=np.uint32)
 
         if selected_channel_names:
             selected_channels = [
@@ -199,9 +194,9 @@ class NwbRecording(Recording):
                     stream_id += 1
 
                 ds = self.nwb["acquisition"][dataset]
-                channel_states = ds["data"][()]
-                sample_numbers = ds["sync"][()]
-                timestamps = ds["timestamps"][()]
+                channel_states = ds["data"]
+                sample_numbers = ds["sync"]
+                timestamps = ds["timestamps"]
 
                 events.append(
                     pd.DataFrame(
@@ -259,8 +254,6 @@ class NwbRecording(Recording):
     def detect_recordings(directory, mmap_timestamps=True):
 
         recordings = []
-
-        found_recording = False
 
         nwb_files = glob.glob(os.path.join(directory, "experiment*.nwb"))
         nwb_files.sort()
