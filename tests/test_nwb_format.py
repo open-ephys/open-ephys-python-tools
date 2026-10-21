@@ -119,13 +119,8 @@ def test_events(nwb_recording_with_spike_data: NwbRecording):
 
 def test_messages(nwb_recording_with_spike_data: NwbRecording):
 
-    with pytest.raises(NotImplementedError):
-        assert nwb_recording_with_spike_data.messages is not None
-
-    # messages = nwb_recording_with_spike_data.messages
-    # assert len(messages) > 0
-    # assert isinstance(messages, pandas.DataFrame)
-    # expected_columns = ["sample_number", "timestamp", "message"]
-    # assert list(messages.columns) == expected_columns
-    # nMessages = 14
-    # assert len(messages) == nMessages
+    messages = nwb_recording_with_spike_data.messages
+    assert isinstance(messages, pandas.DataFrame)
+    assert len(messages) == 14
+    assert list(messages.columns) == ["sample_number", "timestamp", "message"]
+    assert all(isinstance(m, str) and len(m) > 0 for m in messages["message"])
