@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas
 import pytest
 from open_ephys.analysis import Session, RecordNode
@@ -124,3 +125,73 @@ def test_messages(nwb_recording_with_spike_data: NwbRecording):
     assert len(messages) == 14
     assert list(messages.columns) == ["sample_number", "timestamp", "message"]
     assert all(isinstance(m, str) and len(m) > 0 for m in messages["message"])
+
+
+# Files written by the AqNWB-based NWB plugin (GUI v1.1.0): File Reader -> Phase Detector -> Spike Detector ->
+# Record Node (recording channels 1-4 of 16), two short recordings appended to the same file, two Message Center
+# messages per recording
+@pytest.fixture
+def nwb_aqnwb_recording() -> NwbRecording:
+    path = os.path.join(os.path.dirname(__file__), "data", "v1.1.0_NWB")
+    return Session(path).recordnodes[0].recordings[0]
+
+
+def test_aqnwb_continuous_data(nwb_aqnwb_recording: NwbRecording):
+    cont = nwb_aqnwb_recording.continuous[0]
+    assert isinstance(cont, NwbContinuous)
+    assert cont.metadata.source_node_id == 100
+    assert cont.metadata.source_node_name == "File Reader"
+    assert cont.metadata.stream_name == "example_data"
+    assert cont.metadata.sample_rate == 40000.0
+    assert cont.metadata.num_channels == 4
+    assert cont.metadata.bit_volts == pytest.approx([0.05] * 4)
+    assert cont.samples.shape == (52012, 4)
+    # sample numbers are stored in sync/sample_numbers
+    assert len(cont.sample_numbers) == cont.samples.shape[0]
+    assert len(cont.timestamps) == cont.samples.shape[0]
+    samples = cont.get_samples(0, 10, selected_channels=np.arange(4))
+    assert samples == pytest.approx(cont.samples[0:10, :] * 0.05)
+
+
+def test_aqnwb_spike_data(nwb_aqnwb_recording: NwbRecording):
+    spikes = nwb_aqnwb_recording.spikes
+    assert [s.metadata.name for s in spikes] == ["Tetrode 1", "Tetrode 2"]
+    assert [s.waveforms.shape for s in spikes] == [(533, 4, 40), (508, 4, 40)]
+    for s in spikes:
+        assert s.metadata.stream_name == "example_data"
+        assert len(s.sample_numbers) == len(s.timestamps) == s.waveforms.shape[0]
+        # waveforms in microvolts (data.conversion = bitVolts / 1e6), i.e., plausible spike amplitudes
+        assert 10 < np.abs(s.waveforms).max() < 1000
+
+
+def test_aqnwb_events(nwb_aqnwb_recording: NwbRecording):
+    nwb_aqnwb_recording.load_events()
+    events = nwb_aqnwb_recording._events
+    assert list(events.columns) == [
+        "line",
+        "timestamp",
+        "sample_number",
+        "processor_id",
+        "stream_index",
+        "stream_name",
+        "state",
+    ]
+    # Phase Detector (processor 104) output on line 1 of the example_data stream. It turns the line on at each
+    # detected peak and only off after 2000 samples without a new peak, so (almost) all events have state 1
+    assert set(events.processor_id) == {104}
+    assert set(events.stream_name) == {"example_data"}
+    assert set(events.line) == {1}
+    assert set(events.state) <= {0, 1}
+    assert (events.state == 1).any()
+    assert len(events) == 576
+
+
+def test_aqnwb_messages(nwb_aqnwb_recording: NwbRecording):
+    messages = nwb_aqnwb_recording.messages
+    assert list(messages.columns) == ["sample_number", "timestamp", "message"]
+    assert list(messages.message) == [
+        "first message of recording 1",
+        "second message of recording 1",
+        "first message of recording 2",
+        "second message of recording 2",
+    ]
