@@ -254,28 +254,28 @@ class NwbRecording(Recording):
                         "line": lines,
                         "timestamp": timestamps,
                         "sample_number": sample_numbers,
-                        "processor_id": [processor_id] * len(lines),
-                        "stream_index": [stream_indexes[key]] * len(lines),
+                        # float, as in the Binary format and earlier versions of this reader
+                        "processor_id": np.full(len(lines), processor_id, dtype="float64"),
+                        "stream_index": np.full(len(lines), stream_indexes[key], dtype="float64"),
                         "stream_name": [stream_name] * len(lines),
                         "state": states,
                     }
                 )
             )
 
-        # NWB plugin >= 2: one EventsTable per TTL event channel in /events, named
-        # "<source>-<id>.<stream>.<channel>" or "<source>-<id>.<stream>.<processor>-<id>.<channel>"
-        # for events created by a downstream processor
+        # NWB plugin >= 2: one EventsTable per TTL event channel in /events, named as the event folders of the
+        # Binary format: "<processor>-<id>.<stream>.TTL" (further channels of the processor: "TTL_1", ...)
         for name, table in (self.nwb["events"].items() if "events" in self.nwb else []):
             if not {"line", "state", "sample_number", "timestamp"} <= set(table.keys()):
                 continue
             parts = name.split(".")
-            processor_id = int(parts[0].split("-")[-1])
-            if len(parts) > 3 and parts[2].rsplit("-", 1)[-1].isdigit():
-                processor_id = int(parts[2].rsplit("-", 1)[-1])
+            if len(parts) < 3 or not (parts[-1] == "TTL" or parts[-1].startswith("TTL_")):
+                continue
+            processor_id = int(parts[0].rsplit("-", 1)[-1])
             add_events(
                 processor_id,
-                parts[1],
-                table["line"][()].astype("int") + 1,  # 1-based, as in the Binary format
+                ".".join(parts[1:-1]),
+                table["line"][()].astype("int16") + 1,  # 1-based int16, as in the Binary format
                 table["state"][()].astype("int"),
                 table["timestamp"][()],
                 table["sample_number"][()],
