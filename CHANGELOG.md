@@ -1,5 +1,18 @@
 # `open-ephys-python-tools` Changelog
 
+## Unreleased
+
+- Support the NWB files written by the AqNWB-based NWB Format plugin (NWB 2.11); files written by earlier
+  versions of the plugin can still be read
+  - Sample numbers are read from `sync/sample_numbers`, and the sample rate from `starting_time.rate` or the
+    timestamps (instead of `timestamps.interval`, which NWB fixes to 1)
+  - Continuous data and spikes are scaled with `data.conversion * channel_conversion`, as specified by NWB
+    (files of earlier plugin versions store the factor in both, so only `channel_conversion` is applied for them)
+  - TTL events are read from the `EventsTable`s in `/events`, which are named as the Binary event folders
+    (`<processor>-<id>.<stream>.TTL`)
+- `NwbRecording.load_messages` is implemented (new and previous NWB layout)
+- Added a v1.1.0 NWB test file and tests
+
 ## 1.0.0
 
 - Dropped support for Python < 3.9

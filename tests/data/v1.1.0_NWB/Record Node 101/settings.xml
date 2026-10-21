@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<SETTINGS>
+  <INFO>
+    <VERSION>1.1.0</VERSION>
+    <PLUGIN_API_VERSION>10</PLUGIN_API_VERSION>
+    <DATE>21 Oct 2026 2:20:40</DATE>
+    <OS>Mac OSX 15.7.2</OS>
+    <MACHINE name="terraomega-2" cpu_model="Apple M4" cpu_num_cores="10"/>
+  </INFO>
+  <SIGNALCHAIN>
+    <PROCESSOR name="File Reader" insertionPoint="0" pluginName="File Reader"
+               type="0" index="2" libraryName="" libraryVersion="" processorType="2"
+               nodeId="100">
+      <PROCESSOR_PARAMETERS selected_file="/Users/oruebel/Devel/AQNWB/OpenEphys_2026/plugin-GUI/Build/Debug/Open Ephys GUI.app/Contents/Resources/resources/structure.oebin"
+                            active_stream="0" start_time="00:00:00" end_time="00:00:04.999"/>
+      <STREAM name="example_data" description="A description of the File Reader Stream"
+              sample_rate="40000.0" channel_count="16">
+        <PARAMETERS/>
+      </STREAM>
+      <CUSTOM_PARAMETERS>
+        <SCRUBBERINTERFACE show="false"/>
+      </CUSTOM_PARAMETERS>
+      <EDITOR isCollapsed="0" isDrawerOpen="0" displayName="File Reader" activeStream="0"/>
+    </PROCESSOR>
+    <PROCESSOR name="Phase Detector" insertionPoint="1" pluginName="Phase Detector"
+               type="1" index="0" libraryName="Phase Detector" libraryVersion="1.1.0"
+               processorType="1" nodeId="104">
+      <PROCESSOR_PARAMETERS/>
+      <STREAM name="example_data" description="A description of the File Reader Stream"
+              sample_rate="40000.0" channel_count="16">
+        <PARAMETERS enable_stream="1" channel="1" ttl_out="0" gate_line="-1" phase="0"/>
+      </STREAM>
+      <CUSTOM_PARAMETERS/>
+      <EDITOR isCollapsed="0" isDrawerOpen="0" displayName="Phase Detector"
+              activeStream="0"/>
+    </PROCESSOR>
+    <PROCESSOR name="Spike Detector" insertionPoint="1" pluginName="Spike Detector"
+               type="1" index="3" libraryName="Spike Detector" libraryVersion="1.1.0"
+               processorType="1" nodeId="103">
+      <PROCESSOR_PARAMETERS/>
+      <STREAM name="example_data" description="A description of the File Reader Stream"
+              sample_rate="40000.0" channel_count="16">
+        <PARAMETERS enable_stream="1"/>
+      </STREAM>
+      <CUSTOM_PARAMETERS>
+        <SPIKE_CHANNEL name="Tetrode 1" description="Tetrode from Spike Detector 103"
+                       num_channels="4" sample_rate="40000.0" stream_name="example_data"
+                       stream_source="100" local_channels="1,2,3,4" thrshlder_type="0"
+                       abs_threshold1="-50.0" std_threshold1="4.0" dyn_threshold1="4.0"
+                       abs_threshold2="-50.0" std_threshold2="4.0" dyn_threshold2="4.0"
+                       abs_threshold3="-50.0" std_threshold3="4.0" dyn_threshold3="4.0"
+                       abs_threshold4="-50.0" std_threshold4="4.0" dyn_threshold4="4.0"
+                       waveform_type="0"/>
+        <SPIKE_CHANNEL name="Tetrode 2" description="Tetrode from Spike Detector 103"
+                       num_channels="4" sample_rate="40000.0" stream_name="example_data"
+                       stream_source="100" local_channels="5,6,7,8" thrshlder_type="0"
+                       abs_threshold1="-50.0" std_threshold1="4.0" dyn_threshold1="4.0"
+                       abs_threshold2="-50.0" std_threshold2="4.0" dyn_threshold2="4.0"
+                       abs_threshold3="-50.0" std_threshold3="4.0" dyn_threshold3="4.0"
+                       abs_threshold4="-50.0" std_threshold4="4.0" dyn_threshold4="4.0"
+                       waveform_type="0"/>
+      </CUSTOM_PARAMETERS>
+      <EDITOR isCollapsed="0" isDrawerOpen="0" displayName="Spike Detector"
+              activeStream="0"/>
+    </PROCESSOR>
+    <PROCESSOR name="LFP Viewer" insertionPoint="1" pluginName="LFP Viewer"
+               type="1" index="5" libraryName="LFP viewer" libraryVersion="1.1.0"
+               processorType="3" nodeId="102">
+      <PROCESSOR_PARAMETERS/>
+      <STREAM name="example_data" description="A description of the File Reader Stream"
+              sample_rate="40000.0" channel_count="16">
+        <PARAMETERS/>
+      </STREAM>
+      <CUSTOM_PARAMETERS/>
+      <EDITOR isCollapsed="0" isDrawerOpen="0" displayName="LFP Viewer" activeStream="0"
+              Type="LfpDisplayEditor" tabText="LFP">
+        <TAB Active="1"/>
+        <WINDOW Active="0"/>
+        <VALUES SelectedLayout="1"/>
+        <VISUALIZER_PARAMETERS/>
+        <CUSTOM_PARAMETERS>
+          <LFPDISPLAY0 stream_key="100|example_data" Range="250,2000,10.0" Timebase="2.0"
+                       Spread="40" colourScheme="1" colourGrouping="1" spikeRaster="OFF"
+                       clipWarning="1" satWarning="1" reverseOrder="0" sortByDepth="0"
+                       channelSkip="1" channelLabelMode="0" subtractOffset="0" isInverted="0"
+                       highPassEnabled="0" carEnabled="0" triggerSource="1" trialAvg="0"
+                       singleChannelView="-1" EventButtonState="255" ChannelDisplayState="1111111111111111"
+                       selectedChannelType="0" ScrollX="0" ScrollY="0"/>
+          <LFPDISPLAY1 stream_key="100|example_data" Range="250,2000,10.0" Timebase="2.0"
+                       Spread="40" colourScheme="1" colourGrouping="1" spikeRaster="OFF"
+                       clipWarning="1" satWarning="1" reverseOrder="0" sortByDepth="0"
+                       channelSkip="1" channelLabelMode="0" subtractOffset="0" isInverted="0"
+                       highPassEnabled="0" carEnabled="0" triggerSource="1" trialAvg="0"
+                       singleChannelView="-1" EventButtonState="255" ChannelDisplayState="1111111111111111"
+                       selectedChannelType="0" ScrollX="0" ScrollY="0"/>
+          <LFPDISPLAY2 stream_key="100|example_data" Range="250,2000,10.0" Timebase="2.0"
+                       Spread="40" colourScheme="1" colourGrouping="1" spikeRaster="OFF"
+                       clipWarning="1" satWarning="1" reverseOrder="0" sortByDepth="0"
+                       channelSkip="1" channelLabelMode="0" subtractOffset="0" isInverted="0"
+                       highPassEnabled="0" carEnabled="0" triggerSource="1" trialAvg="0"
+                       singleChannelView="-1" EventButtonState="255" ChannelDisplayState="1111111111111111"
+                       selectedChannelType="0" ScrollX="0" ScrollY="0"/>
+          <CANVAS doubleVerticalSplitRatio="0.5" doubleHorizontalSplitRatio="0.5"
+                  tripleHorizontalSplitRatio="0.33,0.66" tripleVerticalSplitRatio="0.33,0.66"
+                  showAllOptions="0"/>
+        </CUSTOM_PARAMETERS>
+      </EDITOR>
+    </PROCESSOR>
+    <PROCESSOR name="Record Node" insertionPoint="1" pluginName="Record Node"
+               type="0" index="3" libraryName="" libraryVersion="" processorType="8"
+               nodeId="101">
+      <PROCESSOR_PARAMETERS directory="/Users/oruebel/Devel/AQNWB/OpenEphys_2026/recordings"
+                            engine="1" events="1" spikes="1" main_sync="0"/>
+      <STREAM name="example_data" description="A description of the File Reader Stream"
+              sample_rate="40000.0" channel_count="16">
+        <PARAMETERS channels="5,6,7,8,9,10,11,12,13,14,15,16" sync_line="0"/>
+      </STREAM>
+      <CUSTOM_PARAMETERS fifoMonitorsVisible="1">
+        <SYNC_STATUS streamKey="100|example_data" status="SYNCED_TO_MAIN"/>
+      </CUSTOM_PARAMETERS>
+      <EDITOR isCollapsed="0" isDrawerOpen="0" displayName="Record Node" activeStream="0"/>
+    </PROCESSOR>
+  </SIGNALCHAIN>
+  <CONTROLPANEL isOpen="0" recordPath="/Users/oruebel/Devel/AQNWB/OpenEphys_2026/recordings"
+                recordEngine="NWB2" clockMode="0" clockReferenceTime="0" forceNewDirectory="0"/>
+  <AUDIOEDITOR isMuted="0" volume="50.0" noiseGate="0.0"/>
+  <FILENAMECONFIG>
+    <PREPEND state="0" value=""/>
+    <MAIN state="1" value="2026-10-21_02-20-40"/>
+    <APPEND state="0" value=""/>
+  </FILENAMECONFIG>
+  <EDITORVIEWPORT selectedTab="0" scroll="0"/>
+  <GRAPHVIEWER>
+    <NODE id="100" isProcessorInfoVisible="0">
+      <STREAM key="100|example_data" isStreamVisible="0" isParamsVisible="0"/>
+    </NODE>
+    <NODE id="104" isProcessorInfoVisible="0">
+      <STREAM key="100|example_data" isStreamVisible="0" isParamsVisible="0"/>
+    </NODE>
+    <NODE id="103" isProcessorInfoVisible="0">
+      <STREAM key="100|example_data" isStreamVisible="0" isParamsVisible="0"/>
+    </NODE>
+    <NODE id="102" isProcessorInfoVisible="0">
+      <STREAM key="100|example_data" isStreamVisible="0" isParamsVisible="0"/>
+    </NODE>
+    <NODE id="101" isProcessorInfoVisible="0">
+      <STREAM key="100|example_data" isStreamVisible="0" isParamsVisible="0"/>
+    </NODE>
+  </GRAPHVIEWER>
+  <DATAVIEWPORT splitOrientation="horizontal">
+    <TABBEDCOMPONENT index="0" selectedTabNodeId="102">
+      <TAB nodeId="0"/>
+      <TAB nodeId="1"/>
+      <TAB nodeId="102"/>
+    </TABBEDCOMPONENT>
+  </DATAVIEWPORT>
+  <PROCESSORLIST>
+    <COLOUR ID="801" R="50" G="50" B="50"/>
+    <COLOUR ID="804" R="241" G="90" B="41"/>
+    <COLOUR ID="802" R="0" G="174" B="239"/>
+    <COLOUR ID="803" R="0" G="166" B="81"/>
+    <COLOUR ID="805" R="90" G="110" B="110"/>
+    <COLOUR ID="806" R="255" G="0" B="0"/>
+    <COLOUR ID="807" R="0" G="0" B="0"/>
+  </PROCESSORLIST>
+  <UICOMPONENT isProcessorListOpen="1" isEditorViewportOpen="1" consoleOpenInWindow="0"/>
+  <AUDIO sampleRate="44100.0" bufferSize="1024" deviceType="CoreAudio"/>
+  <MESSAGES/>
+</SETTINGS>

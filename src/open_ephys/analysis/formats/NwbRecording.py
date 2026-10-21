@@ -40,6 +40,44 @@ from open_ephys.analysis.recording import (
 )
 
 
+def _is_legacy(group: h5.Group) -> bool:
+    """Files written by the NWB plugin before v2 (AqNWB) store the sample numbers in a ``sync`` dataset"""
+    return isinstance(group.get("sync"), h5.Dataset)
+
+
+def _sample_numbers(group: h5.Group):
+    """Sample numbers of a TimeSeries: ``sync/sample_numbers`` (NWB plugin >= 2) or the legacy ``sync`` dataset"""
+    sync = group.get("sync")
+    if isinstance(sync, h5.Dataset):
+        return sync
+    if isinstance(sync, h5.Group) and "sample_numbers" in sync:
+        return sync["sample_numbers"]
+    return None
+
+
+def _conversion_to_microvolts(group: h5.Group) -> np.ndarray:
+    """Per-channel factors to convert the stored values of an ElectricalSeries/SpikeEventSeries to microvolts.
+
+    Files written by the NWB plugin before v2 store the factor both in ``data.conversion`` and in
+    ``channel_conversion`` (i.e., applying both would scale twice), so only ``channel_conversion`` is used.
+    Otherwise, values in volts are ``data * data.conversion * channel_conversion`` (NWB specification).
+    """
+    channel_conversion = group["channel_conversion"][()] if "channel_conversion" in group else np.array([1.0])
+    conversion = 1.0 if _is_legacy(group) else float(group["data"].attrs.get("conversion", 1.0))
+    return channel_conversion * conversion * 1e6
+
+
+def _sample_rate(group: h5.Group) -> float:
+    """Sample rate from ``starting_time.rate``, or estimated from the timestamps"""
+    if "starting_time" in group:
+        return float(group["starting_time"].attrs["rate"])
+    timestamps = group["timestamps"][:1001]
+    if len(timestamps) > 1:
+        return float(np.around(1 / np.median(np.diff(timestamps)), 1))
+    # very short legacy series: earlier versions of the plugin stored 1/sample_rate in timestamps.interval
+    return float(np.around(1 / group["timestamps"].attrs["interval"], 1))
+
+
 class NwbSpikes(Spikes):
     def __init__(self, nwb: h5.File, dataset: str):
         self.metadata = SpikeMetadata(
@@ -49,11 +87,14 @@ class NwbSpikes(Spikes):
             sample_rate=None,  # FIXME:
         )
 
-        self.timestamps = nwb["acquisition"][dataset]["timestamps"][()]
-        self.sample_numbers = nwb["acquisition"][dataset]["sync"][()]
-        self.waveforms = nwb["acquisition"][dataset]["data"][()].astype("float64")
+        group = nwb["acquisition"][dataset]
+        self.timestamps = group["timestamps"][()]
+        sample_numbers = _sample_numbers(group)
+        self.sample_numbers = sample_numbers[()] if sample_numbers is not None else None
+        self.waveforms = group["data"][()].astype("float64")
 
-        self.waveforms *= nwb["acquisition"][dataset]["channel_conversion"][0] * 1e6
+        # all channels of a spike waveform use the same factor
+        self.waveforms *= _conversion_to_microvolts(group)[0]
 
 
 class NwbContinuous(Continuous):
@@ -64,20 +105,24 @@ class NwbContinuous(Continuous):
         source_node_id = int(source_node[-3:])
         source_node_name = source_node[:-4]
 
+        group = nwb["acquisition"][dataset]
+        num_channels = group["data"].shape[1]
+        bit_volts = _conversion_to_microvolts(group)
+        if len(bit_volts) == 1:
+            bit_volts = np.repeat(bit_volts, num_channels)
+
         self.metadata = ContinuousMetadata(
             source_node_id=source_node_id,
             source_node_name=source_node_name,
             stream_name=stream_name,
-            sample_rate=np.around(
-                1 / nwb["acquisition"][dataset]["timestamps"].attrs["interval"], 1
-            ),
-            num_channels=nwb["acquisition"][dataset]["data"].shape[1],
-            bit_volts=list(nwb["acquisition"][dataset]["channel_conversion"][()] * 1e6),
+            sample_rate=_sample_rate(group),
+            num_channels=num_channels,
+            bit_volts=list(bit_volts),
             channel_names=None,  # TODO: add this
         )
-        self.samples = nwb["acquisition"][dataset]["data"]
-        self.sample_numbers = nwb["acquisition"][dataset]["sync"]
-        self.timestamps = nwb["acquisition"][dataset]["timestamps"]
+        self.samples = group["data"]
+        self.sample_numbers = _sample_numbers(group)
+        self.timestamps = group["timestamps"]
 
         self.global_timestamps = None
 
@@ -193,49 +238,93 @@ class NwbRecording(Recording):
 
     def load_events(self):
 
-        datasets = list(self.nwb["acquisition"].keys())
-
         events = []
-        processor_ids = []
+        stream_indexes = {}
 
-        for dataset in datasets:
-
-            if dataset[-4:] == ".TTL":
-
-                processor_id = int(dataset.split(".")[0].split("-")[-1])
-                stream_name = dataset.split(".")[1]
-
-                if processor_id not in processor_ids:
-                    processor_ids.append(processor_id)
-                    stream_id = 0
-                else:
-                    stream_id += 1
-
-                ds = self.nwb["acquisition"][dataset]
-                channel_states = ds["data"]
-                sample_numbers = ds["sync"]
-                timestamps = ds["timestamps"]
-
-                events.append(
-                    pd.DataFrame(
-                        data={
-                            "line": np.abs(channel_states),
-                            "timestamp": timestamps,
-                            "sample_number": sample_numbers,
-                            "processor_id": [processor_id] * len(channel_states),
-                            "stream_index": [stream_id] * len(channel_states),
-                            "stream_name": [stream_name] * len(channel_states),
-                            "state": (np.sign(channel_states) + 1 / 2).astype("int"),
-                        }
-                    )
+        def add_events(processor_id, stream_name, lines, states, timestamps, sample_numbers):
+            if len(lines) == 0:
+                return  # empty frames would turn the integer columns into floats in pd.concat
+            # stream_index counts the event streams of each processor
+            key = (processor_id, stream_name)
+            if key not in stream_indexes:
+                stream_indexes[key] = sum(1 for p, _ in stream_indexes if p == processor_id)
+            events.append(
+                pd.DataFrame(
+                    data={
+                        "line": lines,
+                        "timestamp": timestamps,
+                        "sample_number": sample_numbers,
+                        # float, as in the Binary format and earlier versions of this reader
+                        "processor_id": np.full(len(lines), processor_id, dtype="float64"),
+                        "stream_index": np.full(len(lines), stream_indexes[key], dtype="float64"),
+                        "stream_name": [stream_name] * len(lines),
+                        "state": states,
+                    }
                 )
-        self._events = pd.concat(events).sort_values(
-            by=["sample_number", "stream_index"], ignore_index=True
-        )
+            )
+
+        # NWB plugin >= 2: one EventsTable per TTL event channel in /events, named as the event folders of the
+        # Binary format: "<processor>-<id>.<stream>.TTL" (further channels of the processor: "TTL_1", ...)
+        for name, table in (self.nwb["events"].items() if "events" in self.nwb else []):
+            if not {"line", "state", "sample_number", "timestamp"} <= set(table.keys()):
+                continue
+            parts = name.split(".")
+            if len(parts) < 3 or not (parts[-1] == "TTL" or parts[-1].startswith("TTL_")):
+                continue
+            processor_id = int(parts[0].rsplit("-", 1)[-1])
+            add_events(
+                processor_id,
+                ".".join(parts[1:-1]),
+                table["line"][()].astype("int16") + 1,  # 1-based int16, as in the Binary format
+                table["state"][()].astype("int"),
+                table["timestamp"][()],
+                table["sample_number"][()],
+            )
+
+        # NWB plugin < 2: TTL events as "<source>-<id>.<stream>.TTL" TimeSeries with data = +/-(line + 1)
+        for dataset in self.nwb["acquisition"].keys():
+            if dataset[-4:] == ".TTL":
+                ds = self.nwb["acquisition"][dataset]
+                channel_states = ds["data"][()]
+                add_events(
+                    int(dataset.split(".")[0].split("-")[-1]),
+                    dataset.split(".")[1],
+                    np.abs(channel_states),
+                    (channel_states > 0).astype("int"),
+                    ds["timestamps"][()],
+                    ds["sync"][()],
+                )
+
+        if len(events) > 0:
+            self._events = pd.concat(events).sort_values(
+                by=["sample_number", "stream_index"], ignore_index=True
+            )
+        else:
+            self._events = None
 
     def load_messages(self):
-        raise NotImplementedError(
-            "Loading messages from NWB2 format is noy yet implemented."
+
+        # NWB plugin >= 2: EventsTable /events/messages; NWB plugin < 2: AnnotationSeries /acquisition/messages
+        if "events" in self.nwb and "messages" in self.nwb["events"]:
+            table = self.nwb["events"]["messages"]
+            sample_numbers = table["sample_number"][()]
+            timestamps = table["timestamp"][()]
+            text = table["annotation"][()]
+        elif "messages" in self.nwb["acquisition"] and isinstance(self.nwb["acquisition"]["messages"].get("sync"), h5.Dataset):
+            series = self.nwb["acquisition"]["messages"]
+            sample_numbers = series["sync"][()]
+            timestamps = series["timestamps"][()]
+            text = series["data"][()]
+        else:
+            self._messages = None
+            return
+
+        self._messages = pd.DataFrame(
+            data={
+                "sample_number": sample_numbers,
+                "timestamp": timestamps,
+                "message": [t.decode("utf-8") if isinstance(t, bytes) else str(t) for t in text],
+            }
         )
 
     def __str__(self):
